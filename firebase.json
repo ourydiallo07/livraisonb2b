@@ -1,0 +1,75 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "ecommerapp-6c040",
+          "appId": "1:259602366484:android:917282a2679faa944fa701",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "ecommerapp-6c040",
+          "configurations": {
+            "android": "1:259602366484:android:917282a2679faa944fa701",
+            "ios": "1:259602366484:ios:07427b5a3de138f54fa701",
+            "macos": "1:259602366484:ios:07427b5a3de138f54fa701",
+            "web": "1:259602366484:web:3c24e77a2422e37f4fa701",
+            "windows": "1:259602366484:web:46811fbc26e5108d4fa701"
+          }
+        }
+      }
+    }
+  },
+  "emulators": {
+  
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "database": {
+      "port": 9000
+    },
+    "storage": {
+      "port": 9199
+    },
+    "ui": {
+      "enabled": true,
+      "host": "0.0.0.0",
+    "port": 4000 
+    },
+    "singleProjectMode": true
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "us-east1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "remoteconfig": {
+    "template": "remoteconfig.template.json"
+  },
+  "extensions": {},
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}
