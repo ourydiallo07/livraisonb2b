@@ -138,4 +138,31 @@ class UserService {
       await AwsServices.uploadProfile(compressedFile, loginData, appData);
     }
   }
+
+  // Ajoute dans lib/services/user_service.dart
+  static Future<void> promoteToAdmin(String userId) async {
+    await db.collection(USERS_REF).doc(userId).update({'isAdmin': true});
+  }
+
+  static Future<void> demoteFromAdmin(String userId) async {
+    await db.collection(USERS_REF).doc(userId).update({'isAdmin': false});
+  }
+
+  static Future<List<UserApp>> getAdmins() async {
+    final snapshot =
+        await db
+            .collection(USERS_REF)
+            .where('isAdmin', isEqualTo: true)
+            .withConverter(
+              fromFirestore: UserApp.fromFirestore,
+              toFirestore: (UserApp userApp, _) => userApp.toFirestore(),
+            )
+            .get();
+
+    return snapshot.docs.map((doc) => doc.data()).toList();
+  }
+
+  static Future<void> updateUserAdminStatus(String userId, bool isAdmin) async {
+    await db.collection(USERS_REF).doc(userId).update({'isAdmin': isAdmin});
+  }
 }

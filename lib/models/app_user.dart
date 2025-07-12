@@ -1,6 +1,4 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 
@@ -13,6 +11,7 @@ class UserApp {
   String? imageKey;
   int? bonus = 3;
   String? token;
+  bool isAdmin;
 
   UserApp({
     this.id,
@@ -23,6 +22,7 @@ class UserApp {
     this.imageKey,
     this.bonus,
     this.token,
+    this.isAdmin = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -34,6 +34,7 @@ class UserApp {
       'imageKey': imageKey,
       'bonus': bonus,
       'token': token,
+      'isAdmin': isAdmin,
     };
   }
 
@@ -58,6 +59,7 @@ class UserApp {
       imageKey: map['imageKey'] != null ? map['imageKey'] as String : null,
       bonus: map['bonus'] != null ? map['bonus'] as int : null,
       token: map['token'] as String?,
+      isAdmin: map['isAdmin'] != null ? map['isAdmin'] as bool : false,
     );
   }
 

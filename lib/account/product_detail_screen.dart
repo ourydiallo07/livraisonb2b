@@ -5,7 +5,8 @@ import '../provider_data/product_provider.dart';
 class ProductDetailScreen extends StatelessWidget {
   final String productId;
 
-  ProductDetailScreen({required this.productId});
+  const ProductDetailScreen({Key? key, required this.productId})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -19,14 +20,18 @@ class ProductDetailScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Image.network(loadedProduct.imageUrl),
-            SizedBox(height: 10),
-            Text('${loadedProduct.price} FCFA', style: TextStyle(fontSize: 20)),
-            SizedBox(height: 10),
+            if (loadedProduct.imageUrl != null)
+              Image.network(loadedProduct.imageUrl!),
+            const SizedBox(height: 10),
+            Text(
+              '${loadedProduct.price} FCFA',
+              style: const TextStyle(fontSize: 20),
+            ),
+            const SizedBox(height: 10),
             Padding(
-              padding: EdgeInsets.all(10),
+              padding: const EdgeInsets.all(10),
               child: Text(
-                loadedProduct.description,
+                loadedProduct.description ?? 'Pas de description',
                 textAlign: TextAlign.center,
               ),
             ),

@@ -9,6 +9,8 @@ class AppColors {
   static const Color textDark = Color(0xFF333333);
   static const Color textGrey = Color(0xFF666666);
   static const Color borderGrey = Color(0xFFE0E0E0);
+
+  static var primaryColor;
 }
 
 final ThemeData appTheme = ThemeData(

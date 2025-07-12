@@ -76,6 +76,69 @@ class AwsServices {
     }
   }
 
+  static Future<void> deleteFile({
+    required String keyName,
+    AppData? appData, // Optionnel pour mettre à jour l'UI
+  }) async {
+    try {
+      appData?.updateS3StateUploading(true);
+
+      await Amplify.Storage.remove(
+        path: StoragePath.fromString("$PREFIX$keyName"),
+      );
+
+      safePrint('Fichier supprimé avec succès: $keyName');
+    } on StorageException catch (e) {
+      safePrint('Erreur lors de la suppression du fichier: ${e.message}');
+      rethrow;
+    } finally {
+      appData?.updateS3StateUploading(false);
+    }
+  }
+
+  // Méthode spécifique pour supprimer un profil utilisateur
+  static Future<void> deleteProfile(
+    LoginData loginData,
+    AppData appData,
+  ) async {
+    UserApp currentUserApp = loginData.getUserApp;
+    if (currentUserApp.imageKey == null || currentUserApp.imageKey!.isEmpty) {
+      safePrint('Aucune image de profil à supprimer');
+      return;
+    }
+
+    try {
+      await deleteFile(keyName: currentUserApp.imageKey!, appData: appData);
+
+      // Mettre à jour l'utilisateur après suppression
+      currentUserApp.profileUrl = null;
+      currentUserApp.imageKey = null;
+
+      loginData.updateUserApp(currentUserApp);
+      await UserService.updateUserApp(currentUserApp);
+    } catch (e) {
+      safePrint('Erreur lors de la suppression du profil: $e');
+      rethrow;
+    }
+  }
+
+  // Méthode pour supprimer une image de produit
+  static Future<void> deleteProductImage(String imageUrl) async {
+    try {
+      // Extraire le keyName de l'URL
+      final prefixToRemove = 'https://$bucketName.s3.$region.amazonaws.com/';
+      if (imageUrl.startsWith(prefixToRemove)) {
+        final keyName = imageUrl.substring(prefixToRemove.length);
+        await deleteFile(keyName: keyName);
+      } else {
+        safePrint('URL non reconnue, impossible d\'extraire le keyName');
+      }
+    } catch (e) {
+      safePrint('Erreur lors de la suppression de l\'image de produit: $e');
+      rethrow;
+    }
+  }
+
   static Future<String?> downloadPicture({required String keyName}) async {
     final documentsDir = await getTemporaryDirectory();
     final filepath = '${documentsDir.path}/${const UuidV4().generate()}';

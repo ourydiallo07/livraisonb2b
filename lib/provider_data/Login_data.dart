@@ -1,120 +1,116 @@
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:livraisonb2b/account/registration_screen.dart';
 import 'package:livraisonb2b/models/app_user.dart';
+import 'package:livraisonb2b/provider_data/cart_provider.dart';
 import 'package:livraisonb2b/services/user_service.dart';
+import 'package:provider/provider.dart';
 
 class LoginData extends ChangeNotifier {
-  late StreamSubscription<DocumentSnapshot<UserApp>> listener;
-
-  LoginData() {
-    listToUserChange();
-  }
+  late StreamSubscription<DocumentSnapshot<UserApp>> _userListener;
   String loginPath = RegistrationScreen.idScreen;
   UserApp currentUserApp = UserApp();
-
   String? authPhoneNumber;
-
-  var retryText = "";
+  String retryText = "";
   String verificationId = "";
   int? resendToken;
+  bool _isInitialized = false;
 
   UserApp get getUserApp => currentUserApp;
 
-  void listToUserChange() {
-    listener = UserService.streamCurrentLoggedUser().listen((snapSchot) {
-      if (snapSchot.data() != null) {
-        currentUserApp = snapSchot.data()!;
+  void initialize(BuildContext context) {
+    if (_isInitialized) return;
+
+    _userListener = UserService.streamCurrentLoggedUser().listen((snapshot) {
+      if (snapshot.exists && snapshot.data() != null) {
+        currentUserApp = snapshot.data()!;
         notifyListeners();
+
+        // Charger le panier après mise à jour de l'utilisateur
+        _loadUserCart(context);
       }
     });
+
+    _isInitialized = true;
   }
 
-  /// Updates the user's bonus by creating a total bonus and weight,
-  /// then retrieves the current logged user's bonus and updates the
-  // /// current user app's bonus if it exists.
-  // Future<void> updateUserBonus() async {
-  //   double totalBonus = await BonusServices.getTotalBonus();
-  //   if (totalBonus == 0.0) {
-  //     currentUserApp.bonus = 0;
-  //     await UserService.updateUserApp(currentUserApp);
-  //     notifyListeners();
-  //   } else {
-  //     final loggedUser = await UserService.getCurrentLoggedUser();
-  //     if (loggedUser != null && loggedUser.bonus != null) {
-  //       currentUserApp.bonus = loggedUser.bonus;
-  //       notifyListeners();
-  //     }
-  //   }
-  // }
+  Future<void> _loadUserCart(BuildContext context) async {
+    if (currentUserApp.id == null) return;
 
-  void setAUthCode(String verificationIdState, int? resendTokenState) {
+    try {
+      final cartProvider = Provider.of<CartProvider>(context, listen: false);
+      await cartProvider.loadCart(currentUserApp.id!);
+    } catch (e) {
+      debugPrint('Erreur chargement panier: $e');
+    }
+  }
+
+  Future<void> handleUserLogin(BuildContext context, UserApp user) async {
+    final auth = FirebaseAuth.instance;
+    final oldUserId = auth.currentUser?.uid;
+    final newUserId = user.id!;
+
+    // Migration du panier si l'utilisateur change
+    if (oldUserId != null && oldUserId != newUserId) {
+      try {
+        final cartProvider = Provider.of<CartProvider>(context, listen: false);
+        await cartProvider.migrateCart(oldUserId, newUserId);
+      } catch (e) {
+        debugPrint('Erreur migration panier: $e');
+      }
+    }
+
+    // Mettre à jour les données utilisateur
+    currentUserApp = user;
+    notifyListeners();
+
+    // Charger le panier
+    await _loadUserCart(context);
+  }
+
+  void setAuthCode(String verificationIdState, int? resendTokenState) {
     verificationId = verificationIdState;
     resendToken = resendTokenState;
+    notifyListeners();
   }
 
-  /// Updates the current user app state.
-  ///
-  /// Parameters:
-  ///   state (UserApp): The new state of the user app.
-  ///
-  /// Returns:
-  ///   None
-  void updateUserApp(UserApp state) {
-    currentUserApp = state;
+  void updateUserApp(UserApp newUserApp) {
+    currentUserApp = newUserApp;
+    notifyListeners();
   }
 
-  /// Updates the user's login state by setting the `loginPath` to the provided `path`.
-  ///
-  /// Parameters:
-  ///   - path: The new login path.
-  ///
-  /// This function does not return anything. It notifies all the listeners that the login state has been updated.
   void updateUserLoginState(String path) {
     loginPath = path;
-
     notifyListeners();
   }
 
-  /// Updates the authorization phone number.
-  ///
-  /// Parameters:
-  ///   state (String?): The new authorization phone number.
-  ///
-  /// Returns:
-  ///   None
-  void updateAuthPhoneNumber(String? state) {
-    authPhoneNumber = state;
-  }
-
-  /// Updates the retry text with the provided state and notifies all the listeners.
-  ///
-  /// Parameters:
-  ///   - state: The new state of the retry text.
-  ///
-  /// This function does not return anything.
-  void updateRetryText(String state) {
-    retryText = state;
+  void updateAuthPhoneNumber(String? phoneNumber) {
+    authPhoneNumber = phoneNumber;
     notifyListeners();
   }
 
-  /// Updates the profile image URL of the current user app.
-  ///
-  /// Parameters:
-  ///   state (String?): The new profile image URL.
-  ///
-  /// Returns:
-  ///   None
-  void updateProfileImage(String? state) {
-    currentUserApp.profileUrl = state;
+  void updateRetryText(String text) {
+    retryText = text;
+    notifyListeners();
+  }
+
+  void updateProfileImage(String? imageUrl) {
+    currentUserApp.profileUrl = imageUrl;
+    notifyListeners();
+  }
+
+  void resetAuthState() {
+    verificationId = "";
+    resendToken = null;
+    authPhoneNumber = null;
     notifyListeners();
   }
 
   @override
   void dispose() {
-    listener.cancel();
+    _userListener.cancel();
     super.dispose();
   }
 }

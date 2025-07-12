@@ -2,10 +2,10 @@ import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:livraisonb2b/account/Admin/admin_home_screen.dart';
 import 'package:livraisonb2b/account/edit_profile.dart';
 import 'package:livraisonb2b/account/otp_input_screen.dart';
 import 'package:livraisonb2b/global_utils/utils.dart';
-import 'package:livraisonb2b/home/home_screen.dart';
 import 'package:livraisonb2b/main_screen.dart';
 import 'package:livraisonb2b/models/app_user.dart';
 import 'package:livraisonb2b/provider_data/Login_data.dart';
@@ -68,7 +68,7 @@ class AuthService {
     BuildContext context,
   ) async {
     final loginData = Provider.of<LoginData>(context, listen: false);
-    loginData.setAUthCode(verificationId, resendToken);
+    loginData.setAuthCode(verificationId, resendToken);
     _resendToken = resendToken;
 
     await Navigator.push(
@@ -134,18 +134,27 @@ class AuthService {
           loginProvider.updateUserApp(userApp);
 
           if (context.mounted) {
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              MainScreen.idScreen,
-              (route) => false,
-            );
+            // Vérification du statut admin et redirection appropriée
+            if (userApp.isAdmin == true) {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AdminHomeScreen
+                    .idScreen, // Assurez-vous d'avoir importé l'écran admin
+                (route) => false,
+              );
+            } else {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                MainScreen.idScreen,
+                (route) => false,
+              );
+            }
           }
         }
       }
     } on FirebaseAuthException catch (error) {
       if (context.mounted) {
         displayMessage("Le code de vérification est invalide", context, true);
-
         customPrint(error);
       }
     } catch (e) {
