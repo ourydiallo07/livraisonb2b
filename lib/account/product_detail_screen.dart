@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:livraisonb2b/global_utils/utils.dart';
 import 'package:provider/provider.dart';
 import '../provider_data/product_provider.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final String productId;
 
-  const ProductDetailScreen({Key? key, required this.productId})
-    : super(key: key);
+  const ProductDetailScreen({super.key, required this.productId});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,7 @@ class ProductDetailScreen extends StatelessWidget {
               Image.network(loadedProduct.imageUrl!),
             const SizedBox(height: 10),
             Text(
-              '${loadedProduct.price} FCFA',
+              Utils.formatPrice(loadedProduct.price),
               style: const TextStyle(fontSize: 20),
             ),
             const SizedBox(height: 10),

@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:amplify_flutter/amplify_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:livraisonb2b/constants/app_errors.dart';
 import 'package:livraisonb2b/provider_data/app_data.dart';
 import 'package:livraisonb2b/services/aws_services.dart';
 import '../models/product.dart';
@@ -64,39 +64,58 @@ class ProductProvider with ChangeNotifier {
     File? imageFile,
     AppData appData,
   ) async {
+    String? imageKey;
     try {
-      String? imageUrl;
+      // Validation
+      if (product.name.isEmpty) {
+        throw AppError(
+          AppErrorType.invalidInput,
+          message: 'Le nom est obligatoire',
+        );
+      }
+      if (product.price <= 0) {
+        throw AppError(
+          AppErrorType.invalidInput,
+          message: 'Le prix doit être positif',
+        );
+      }
 
-      // 1. Upload vers S3 si image existe
+      String? imageUrl;
+      String? imageKey;
+
+      // Upload image si elle existe
       if (imageFile != null) {
-        final imageKey =
-            "PRODUCTS_IMAGES/${DateTime.now().toIso8601String()}.jpg";
+        imageKey = "PRODUCTS_IMAGES/${DateTime.now().toIso8601String()}.jpg";
         await AwsServices.uploadFile(imageFile, imageKey, appData);
         imageUrl = AwsServices.getPublicUrl(keyName: imageKey);
       }
 
-      // 2. Enregistrer TOUTES les données dans Firestore
-      final docRef = await FirebaseFirestore.instance
-          .collection('products')
-          .add({
-            'name': product.name,
-            'price': product.price,
-            'description': product.description,
-            'imageUrl': imageUrl,
-            'createdAt': FieldValue.serverTimestamp(),
-            'ownerId': FirebaseAuth.instance.currentUser?.uid,
-          });
+      // Création dans Firestore avec batch write
+      final batch = FirebaseFirestore.instance.batch();
+      final productRef =
+          FirebaseFirestore.instance.collection('products').doc();
 
-      // 3. Mettre à jour l'état local avec l'ID généré par Firestore
-      final persistentProduct = product.copyWith(
-        id: docRef.id, // <- Ceci est crucial
-        imageUrl: imageUrl,
-      );
+      batch.set(productRef, {
+        'name': product.name,
+        'price': product.price,
+        'description': product.description,
+        'imageUrl': imageUrl,
+        'createdAt': FieldValue.serverTimestamp(),
+        'ownerId': FirebaseAuth.instance.currentUser?.uid,
+      });
 
-      _items.add(persistentProduct);
+      await batch.commit();
+
+      // Mise à jour locale
+      _items.add(product.copyWith(id: productRef.id, imageUrl: imageUrl));
+
       notifyListeners();
     } catch (e) {
-      throw Exception("Erreur lors de l'ajout du produit: $e");
+      // Rollback en cas d'erreur
+      if (imageKey != null) {
+        await AwsServices.deleteFile(keyName: imageKey);
+      }
+      rethrow;
     }
   }
 

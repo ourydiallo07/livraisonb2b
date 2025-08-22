@@ -87,9 +87,9 @@ class AuthService {
       ),
     );
 
-    if (context.mounted) {
-      Navigator.pop(context);
-    }
+    //if (context.mounted) {
+    //Navigator.pop(context);
+    //}
   }
 
   static Future<void> _validateConfirmationCode(
@@ -109,18 +109,21 @@ class AuthService {
       );
       if (userCredential.user?.phoneNumber != null) {
         var firebaseUser = userCredential.user;
-
         String userId = Utils.calculateSHA256(firebaseUser!.phoneNumber!);
 
         UserApp? userApp = await UserService.getUserFromDB(userId);
 
         if (userApp == null) {
-          UserApp newUserApp = UserApp();
-          newUserApp.id = userId;
-          newUserApp.phone = firebaseUser.phoneNumber;
+          // Création d'un nouvel utilisateur (non-admin par défaut)
+          UserApp newUserApp = UserApp(
+            id: userId,
+            phone: firebaseUser.phoneNumber,
+            bonus: UserService.USER_BONUS,
+            isAdmin: false, // Explicitement défini à false
+          );
 
+          await UserService.createUserApp(newUserApp);
           loginProvider.updateUserApp(newUserApp);
-          UserService.createUserApp(newUserApp);
 
           if (context.mounted) {
             displayMessage("Compte créé", context, false);
@@ -131,15 +134,15 @@ class AuthService {
             );
           }
         } else {
+          // Utilisateur existant
           loginProvider.updateUserApp(userApp);
 
           if (context.mounted) {
-            // Vérification du statut admin et redirection appropriée
+            // Redirection en fonction du statut admin
             if (userApp.isAdmin == true) {
               Navigator.pushNamedAndRemoveUntil(
                 context,
-                AdminHomeScreen
-                    .idScreen, // Assurez-vous d'avoir importé l'écran admin
+                AdminHomeScreen.idScreen,
                 (route) => false,
               );
             } else {
@@ -154,13 +157,13 @@ class AuthService {
       }
     } on FirebaseAuthException catch (error) {
       if (context.mounted) {
-        displayMessage("Le code de vérification est invalide", context, true);
-        customPrint(error);
+        displayMessage("Code invalide", context, true);
+        customPrint("Erreur Firebase: ${error.message}");
       }
     } catch (e) {
       if (context.mounted) {
-        customPrint(e.toString());
-        displayMessage("Le code de vérification est invalide", context, true);
+        displayMessage("Erreur inattendue", context, true);
+        customPrint("Erreur: ${e.toString()}");
       }
     }
   }

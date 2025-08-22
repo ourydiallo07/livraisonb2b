@@ -10,7 +10,7 @@ class AppColors {
   static const Color textGrey = Color(0xFF666666);
   static const Color borderGrey = Color(0xFFE0E0E0);
 
-  static var primaryColor;
+  static const Color primaryColor = primaryGreen;
 }
 
 final ThemeData appTheme = ThemeData(

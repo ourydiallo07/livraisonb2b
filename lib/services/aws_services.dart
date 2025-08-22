@@ -83,9 +83,7 @@ class AwsServices {
     try {
       appData?.updateS3StateUploading(true);
 
-      await Amplify.Storage.remove(
-        path: StoragePath.fromString("$PREFIX$keyName"),
-      );
+      Amplify.Storage.remove(path: StoragePath.fromString("$PREFIX$keyName"));
 
       safePrint('Fichier supprimé avec succès: $keyName');
     } on StorageException catch (e) {

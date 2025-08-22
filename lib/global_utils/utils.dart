@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:livraisonb2b/constants/currency_config.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
@@ -14,6 +15,10 @@ class Utils {
     final bytes = utf8.encode(input); // Convert the string to bytes
     final digest = sha256.convert(bytes); // Calculate the SHA-256 hash
     return digest.toString(); // Return the hash as a hexadecimal string
+  }
+
+  static String formatPrice(double price) {
+    return CurrencyConfig.formatPrice(price);
   }
 
   static void showLoadingDialog(BuildContext context) {

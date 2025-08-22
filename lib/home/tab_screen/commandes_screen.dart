@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:livraisonb2b/constants/theme.dart';
+import 'package:livraisonb2b/global_utils/utils.dart';
 import 'package:livraisonb2b/models/order.dart';
-import 'package:livraisonb2b/provider_data/order_provider.dart';
 import 'package:livraisonb2b/provider_data/Login_data.dart';
+import 'package:livraisonb2b/provider_data/order_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 
 class CommandesScreen extends StatefulWidget {
-  static const String idScreen = "CommandesScreen";
+  static const String idScreen = "commandes";
+
   const CommandesScreen({super.key});
 
   @override
@@ -15,185 +18,172 @@ class CommandesScreen extends StatefulWidget {
 
 class _CommandesScreenState extends State<CommandesScreen> {
   String _selectedFilter = 'Toutes';
-
-  final Map<String, String> _statusFilters = {
-    'Toutes': 'all',
-    'En cours': 'pending',
-    'Livrées': 'delivered',
-    'Annulées': 'cancelled',
+  final Map<String, String> _statusTranslations = {
+    'pending': 'En attente',
+    'processing': 'En cours',
+    'shipped': 'Expédiée',
+    'delivered': 'Livrée',
+    'cancelled': 'Annulée',
   };
 
   @override
-  void initState() {
-    super.initState();
-    final user = Provider.of<LoginData>(context, listen: false).currentUserApp;
-    Provider.of<OrderProvider>(
-      context,
-      listen: false,
-    ).fetchUserOrders(user.id!);
-  }
-
-  Widget _buildStatusSummary(List<Order> orders) {
-    final statusCounts = {
-      'En cours': orders.where((o) => o.status == 'pending').length,
-      'Livrées': orders.where((o) => o.status == 'delivered').length,
-      'Annulées': orders.where((o) => o.status == 'cancelled').length,
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-      decoration: BoxDecoration(
-        color: AppColors.secondaryGreen,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      margin: const EdgeInsets.all(8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children:
-            statusCounts.entries.map((entry) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    entry.value.toString(),
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    entry.key,
-                    style: TextStyle(fontSize: 12, color: AppColors.textGrey),
-                  ),
-                ],
-              );
-            }).toList(),
-      ),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final orderProvider = Provider.of<OrderProvider>(context);
     final user = Provider.of<LoginData>(context).currentUserApp;
-    final theme = Theme.of(context);
+    final orderProvider = Provider.of<OrderProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Mes Commandes",
-          style: TextStyle(color: AppColors.backgroundWhite),
-        ),
-        centerTitle: true,
+        title: const Text('Mes Commandes'),
         backgroundColor: AppColors.primaryGreen,
-        iconTheme: const IconThemeData(color: AppColors.backgroundWhite),
       ),
       body: StreamBuilder<List<Order>>(
-        stream: orderProvider.getOrdersStream(user.id!),
+        stream: orderProvider.getOrdersStream(user.id ?? ''),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(color: AppColors.primaryGreen),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Text(
-                "Aucune commande trouvée",
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textGrey,
-                ),
-              ),
-            );
+          if (snapshot.hasError) {
+            return Center(child: Text('Erreur: ${snapshot.error}'));
           }
 
-          final orders = snapshot.data!;
-          final filteredOrders =
-              _selectedFilter == 'Toutes'
-                  ? orders
-                  : orders
-                      .where(
-                        (order) =>
-                            order.status == _statusFilters[_selectedFilter],
-                      )
-                      .toList();
+          final orders = snapshot.data ?? [];
 
-          return Column(
-            children: [
-              // Section Résumé
-              _buildStatusSummary(orders),
-
-              // Filtres
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                color: AppColors.secondaryGreen,
-                child: SizedBox(
-                  height: 40,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _statusFilters.length,
-                    itemBuilder: (context, index) {
-                      final filter = _statusFilters.keys.elementAt(index);
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: ChoiceChip(
-                          label: Text(
-                            filter,
-                            style: TextStyle(
-                              color:
-                                  _selectedFilter == filter
-                                      ? AppColors.backgroundWhite
-                                      : AppColors.textDark,
-                            ),
-                          ),
-                          selected: _selectedFilter == filter,
-                          selectedColor: AppColors.primaryGreen,
-                          backgroundColor: AppColors.backgroundWhite,
-                          side: const BorderSide(color: AppColors.borderGrey),
-                          onSelected: (selected) {
-                            setState(() {
-                              _selectedFilter = selected ? filter : 'Toutes';
-                            });
-                          },
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-
-              // Liste des commandes
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: filteredOrders.length,
-                  itemBuilder: (context, index) {
-                    final order = filteredOrders[index];
-                    return _buildOrderCard(order, theme);
-                  },
-                ),
-              ),
-            ],
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                _buildStatusSummary(orders),
+                const SizedBox(height: 16),
+                _buildFilterChips(),
+                const SizedBox(height: 16),
+                Expanded(child: _buildOrdersList(orders)),
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildOrderCard(Order order, ThemeData theme) {
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: AppColors.borderGrey, width: 1),
+  Widget _buildStatusSummary(List<Order> orders) {
+    final statusCounts = {
+      'Toutes': orders.length,
+      'En attente': orders.where((o) => o.status == 'pending').length,
+      'En cours': orders.where((o) => o.status == 'processing').length,
+      'Livrée': orders.where((o) => o.status == 'delivered').length,
+      'Annulée': orders.where((o) => o.status == 'cancelled').length,
+    };
+
+    return SizedBox(
+      height: 100,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children:
+            statusCounts.entries.map((entry) {
+              return Container(
+                width: 120,
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      entry.value.toString(),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryGreen,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      entry.key,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
       ),
-      color: AppColors.backgroundWhite,
+    );
+  }
+
+  Widget _buildFilterChips() {
+    return Wrap(
+      spacing: 8.0,
+      children:
+          ['Toutes', 'En attente', 'En cours', 'Livrée', 'Annulée'].map((
+            filter,
+          ) {
+            return ChoiceChip(
+              label: Text(filter),
+              selected: _selectedFilter == filter,
+              onSelected: (selected) {
+                setState(() {
+                  _selectedFilter = selected ? filter : 'Toutes';
+                });
+              },
+              selectedColor: AppColors.primaryGreen,
+            );
+          }).toList(),
+    );
+  }
+
+  Widget _buildOrdersList(List<Order> orders) {
+    final filteredOrders =
+        _selectedFilter == 'Toutes'
+            ? orders
+            : orders
+                .where(
+                  (order) =>
+                      _statusTranslations[order.status] == _selectedFilter,
+                )
+                .toList();
+
+    if (filteredOrders.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.receipt_long, size: 60, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Aucune commande ${_selectedFilter == 'Toutes' ? '' : '$_selectedFilter '}trouvée',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      itemCount: filteredOrders.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final order = filteredOrders[index];
+        return _buildOrderCard(order);
+      },
+    );
+  }
+
+  Widget _buildOrderCard(Order order) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -201,26 +191,27 @@ class _CommandesScreenState extends State<CommandesScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  "Commande #${order.id.substring(0, 8)}",
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  'Commande #${order.id.substring(0, 8)}',
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
+                    fontSize: 16,
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: 12,
+                    vertical: 6,
                   ),
                   decoration: BoxDecoration(
                     color: _getStatusBackgroundColor(order.status),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    _getStatusText(order.status),
+                    _statusTranslations[order.status] ?? order.status,
                     style: TextStyle(
                       color: _getStatusColor(order.status),
                       fontSize: 12,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -228,49 +219,20 @@ class _CommandesScreenState extends State<CommandesScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              "Date: ${_formatDate(order.date)}",
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.textGrey,
-              ),
+              _formatDate(order.date ?? DateTime.now()),
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
             const SizedBox(height: 12),
-            ...order.items.map(
-              (item) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        "${item.quantity} x ${item.name}",
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: AppColors.textDark,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      "${(item.price * item.quantity).toStringAsFixed(0)} FCFA",
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textDark,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const Divider(color: AppColors.borderGrey),
+            ...order.items.map((item) => _buildOrderItem(item)).toList(),
+            const Divider(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                const Text('Total:', style: TextStyle(fontSize: 16)),
                 Text(
-                  "Total:",
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textDark,
-                  ),
-                ),
-                Text(
-                  "${order.total.toStringAsFixed(0)} FCFA",
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  Utils.formatPrice(order.total),
+                  style: const TextStyle(
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primaryGreen,
                   ),
@@ -283,49 +245,123 @@ class _CommandesScreenState extends State<CommandesScreen> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
+  Widget _buildOrderItem(OrderItem item) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child:
+                item.imageUrl != null
+                    ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(item.imageUrl!, fit: BoxFit.cover),
+                    )
+                    : Icon(
+                      Icons.shopping_bag,
+                      size: 20,
+                      color: Colors.grey[400],
+                    ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: const TextStyle(fontSize: 14),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  '${item.quantity} x ${Utils.formatPrice(item.price)}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            Utils.formatPrice(item.price * item.quantity),
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+    );
   }
 
-  String _getStatusText(String status) {
-    switch (status) {
-      case 'pending':
-        return 'En cours';
-      case 'processing':
-        return 'En traitement';
-      case 'delivered':
-        return 'Livrée';
-      case 'cancelled':
-        return 'Annulée';
-      default:
-        return status;
-    }
+  String _formatDate(DateTime date) {
+    return DateFormat('dd MMM yyyy - HH:mm').format(date);
   }
 
   Color _getStatusColor(String status) {
     switch (status) {
       case 'pending':
+        return Colors.orange;
       case 'processing':
-        return AppColors.primaryGreen;
+        return Colors.blue;
       case 'delivered':
         return AppColors.primaryGreen;
       case 'cancelled':
         return Colors.red;
       default:
-        return AppColors.textDark;
+        return Colors.white;
     }
   }
 
   Color _getStatusBackgroundColor(String status) {
     switch (status) {
       case 'pending':
+        return Colors.orange.withOpacity(0.2);
       case 'processing':
+        return Colors.blue.withOpacity(0.2);
       case 'delivered':
-        return AppColors.secondaryGreen;
+        return AppColors.primaryGreen.withOpacity(0.2);
       case 'cancelled':
-        return Colors.red.withOpacity(0.1);
+        return Colors.red.withOpacity(0.2);
       default:
-        return AppColors.secondaryGreen;
+        return Colors.grey.withOpacity(0.2);
     }
+  }
+}
+
+class ChoiceChip extends StatelessWidget {
+  final Widget label;
+  final bool selected;
+  final ValueChanged<bool> onSelected;
+  final Color? selectedColor;
+
+  const ChoiceChip({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+    this.selectedColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InputChip(
+      label: label,
+      selected: selected,
+      onSelected: onSelected,
+      selectedColor: selectedColor ?? Theme.of(context).primaryColor,
+      labelStyle: TextStyle(color: selected ? Colors.white : Colors.black),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color:
+              selected
+                  ? selectedColor ?? Theme.of(context).primaryColor
+                  : Colors.grey,
+        ),
+      ),
+    );
   }
 }

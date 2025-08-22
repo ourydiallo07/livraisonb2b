@@ -55,11 +55,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
         listen: false,
       ).addProduct(newProduct, _selectedImage, appData);
 
-      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
+
+      Navigator.pop(context); // Ferme le loading dialog
       displayMessage("Produit ajouté avec succès!", context, false);
-      if (mounted) Navigator.pop(context);
+
+      // Attendre un court instant avant de fermer l'écran
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (mounted) Navigator.pop(context); // Ferme l'écran d'ajout
     } catch (e) {
-      if (mounted) Navigator.pop(context);
+      if (mounted)
+        Navigator.pop(context); // Ferme le loading dialog en cas d'erreur
       displayMessage("Erreur: ${e.toString()}", context, true);
     }
   }
@@ -154,7 +160,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
               // Prix
               Text(
-                'Prix (FCFA)',
+                'Prix (GNF)',
                 style: TextStyle(
                   color: Colors.grey[700],
                   fontWeight: FontWeight.w500,
@@ -171,12 +177,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     borderRadius: BorderRadius.circular(10),
                     borderSide: BorderSide.none,
                   ),
-                  hintText: 'Entrez le prix en FCFA',
+                  hintText: 'Entrez le prix en GNF',
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 14,
                   ),
-                  prefixText: 'FCFA ',
+                  prefixText: 'GNF ',
                 ),
                 validator:
                     (value) => value!.isEmpty ? "Champ obligatoire" : null,

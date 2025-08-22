@@ -60,6 +60,13 @@ class UserService {
     return docSnap.data();
   }
 
+  static Future<void> updateUserBonus(String userId, int bonus) async {
+    await db.collection(USERS_REF).doc(userId).update({
+      'bonus': bonus,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   // stream current user
   static Stream<DocumentSnapshot<UserApp>> streamCurrentLoggedUser() {
     return getUserCollection()
@@ -164,5 +171,31 @@ class UserService {
 
   static Future<void> updateUserAdminStatus(String userId, bool isAdmin) async {
     await db.collection(USERS_REF).doc(userId).update({'isAdmin': isAdmin});
+  }
+
+  // Ajoutez cette méthode
+  static Future<void> updateUserLocation({
+    required String userId,
+    required String address,
+    required GeoPoint location,
+  }) async {
+    await db.collection(USERS_REF).doc(userId).update({
+      'address': address,
+      'location': location,
+      'lastLocationUpdate': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Dans UserService
+  static Future<void> createInitialAdmin(String phoneNumber) async {
+    String adminId = Utils.calculateSHA256(phoneNumber);
+    UserApp adminUser = UserApp(
+      id: adminId,
+      phone: phoneNumber,
+      firstName: "Admin",
+      lastName: "User",
+      isAdmin: true,
+    );
+    await createUserApp(adminUser);
   }
 }

@@ -8,12 +8,12 @@ class PhoneNumberInput extends StatelessWidget {
   final String? Function(String?)? validator;
 
   const PhoneNumberInput({
-    Key? key,
+    super.key,
     required this.controller,
     required this.countryCode,
     this.focusNode,
     this.validator,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

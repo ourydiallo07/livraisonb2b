@@ -4,6 +4,21 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+
+
+	<!-- Demande d'autorisation pour la localisation en cours d'utilisation -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Cette application a besoin de votre position pour afficher la carte de livraison.</string>
+    
+    <!-- Optionnel : Si vous avez besoin d'un accès en arrière-plan -->
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Cette application a besoin de votre position pour les mises à jour en temps réel.</string>
+    
+    <!-- Si vous utilisez Google Maps -->
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>(Optionnel) Description pour les anciennes versions d'iOS</string>
+
+
 	<key>CFBundleDisplayName</key>
 	<string>Livraisonb2b</string>
 	<key>CFBundleExecutable</key>

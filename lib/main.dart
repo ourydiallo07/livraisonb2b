@@ -4,9 +4,9 @@ import 'package:amplify_storage_s3/amplify_storage_s3.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'dart:io' show Platform;
 import 'package:livraisonb2b/account/Admin/admin_home_screen.dart';
 import 'package:livraisonb2b/account/Admin/admin_orders_screen.dart';
 import 'package:livraisonb2b/account/Admin/admin_stats_screen.dart';
@@ -29,77 +29,58 @@ import 'package:livraisonb2b/firebase_options.dart';
 
 Future<void> _configureAmplify() async {
   try {
-    final auth = AmplifyAuthCognito();
-    final storage = AmplifyStorageS3();
-    await Amplify.addPlugins([auth, storage]);
-
+    await Amplify.addPlugins([AmplifyAuthCognito(), AmplifyStorageS3()]);
     await Amplify.configure(amplifyconfig);
+    debugPrint('✅ Amplify configuré avec succès');
   } on Exception catch (e) {
-    safePrint('An error occurred configuring Amplify: $e');
+    debugPrint('⚠️ Erreur Amplify (fonctionnalités réduites): $e');
+    // L'application peut continuer sans Amplify en mode dégradé
   }
 }
 
 Future<void> _configureFirebaseEmulators() async {
-  final host = kIsWeb ? 'localhost' : '10.0.2.2';
+  final host = Platform.isAndroid ? '10.0.2.2' : 'localhost';
 
   try {
-    // Configuration atomique
+    // Configuration Firestore
+    FirebaseFirestore.instance.useFirestoreEmulator(host, 8080);
+    //await FirebaseFirestore.instance.disableNetwork();
+
+    // Configuration Auth
     await FirebaseAuth.instance.useAuthEmulator(host, 9099);
 
-    FirebaseFirestore.instance.settings = Settings(
-      host: '$host:8080',
-      sslEnabled: false,
-      persistenceEnabled: false,
-    );
-
-    FirebaseDatabase.instance.useDatabaseEmulator(host, 9000);
-
-    debugPrint('''
-✅ Émulateurs configurés:
-- Auth: http://$host:9099
-- Firestore: http://$host:8080
-- Realtime DB: http://$host:9000
-''');
+    debugPrint('🔥 Émulateurs actifs sur $host');
   } catch (e, stack) {
-    debugPrint('''
-❌ Erreur configuration émulateurs:
-$e
-Stack: $stack
-''');
-    rethrow;
+    debugPrint('''⚠️ Mode émulateur désactivé:
+    Erreur: $e
+    Stack: $stack''');
+    // Fallback automatique en production
+    FirebaseFirestore.instance.settings = Settings(persistenceEnabled: true);
   }
 }
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1. Initialisation Firebase
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    debugPrint('✅ Firebase initialisé avec succès');
-  } catch (e, stack) {
-    debugPrint('❌ Erreur initialisation Firebase: $e\n$stack');
-    rethrow;
-  }
+  // Initialisation Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
-  // 2. Configuration des émulateurs (debug seulement)
+  // Mode développement seulement
   if (kDebugMode) {
-    try {
-      await _configureFirebaseEmulators();
-    } catch (e, stack) {
-      debugPrint('❌ Erreur configuration émulateurs: $e\n$stack');
-      // Ne pas bloquer l'application si les émulateurs échouent
-    }
+    await _configureFirebaseEmulators();
+
+    // Active les logs détaillés
+    FirebaseFirestore.instance.settings = Settings(persistenceEnabled: false);
+
+    // Debug Config
+    debugPrint('=== MODE DÉVELOPPEMENT ===');
+    debugPrint('• Firestore: émulateur @ 10.0.2.2:8080');
+    debugPrint('• Auth: émulateur @ 10.0.2.2:9099');
   }
 
-  // 3. Configuration Amplify (optionnel)
-  try {
-    await _configureAmplify();
-  } catch (e, stack) {
-    debugPrint('⚠ Amplify non configuré: $e\n$stack');
-  }
+  // Configuration Amplify (optionnelle)
+  await _configureAmplify();
+
   runApp(
     MultiProvider(
       providers: [
@@ -138,16 +119,10 @@ class MyApp extends StatelessWidget {
         RegistrationScreen.idScreen: (context) => RegistrationScreen(),
         EditProfile.idScreen: (context) => const EditProfile(),
         HomeScreen.idScreen: (context) => const HomeScreen(),
-        AddProductScreen.idScreen:
-            (context) => const AddProductScreen(), // Ajoutez cette ligne
-        CommandesScreen.idScreen:
-            (context) => const CommandesScreen(), // Ajoutez cette ligne
-
-        AdminHomeScreen.idScreen:
-            (context) => const AdminHomeScreen(), // Ajoutez cette ligne
-
+        AddProductScreen.idScreen: (context) => const AddProductScreen(),
+        CommandesScreen.idScreen: (context) => const CommandesScreen(),
+        AdminHomeScreen.idScreen: (context) => const AdminHomeScreen(),
         AdminUsersScreen.idScreen: (context) => const AdminUsersScreen(),
-
         AdminOrdersScreen.idScreen: (context) => const AdminOrdersScreen(),
         AdminStatsScreen.idScreen: (context) => const AdminStatsScreen(),
       },

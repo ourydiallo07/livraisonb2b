@@ -46,23 +46,59 @@ class OrderProvider with ChangeNotifier {
   Future<String> createOrder({
     required String userId,
     required List<OrderItem> items,
+    required String userfirstName,
+    required String userlastName,
+    required String userphone,
     required double total,
     String? deliveryAddress,
+    firestore.GeoPoint? deliveryLocation,
+    String? deliveryNotes, // Ajouté
   }) async {
     try {
       final docRef = await _firestore.collection('orders').add({
         'userId': userId,
+        'userfirstName': userfirstName,
+        'userlastName': userlastName,
+        'userphone': userphone,
         'items': items.map((item) => item.toMap()).toList(),
         'total': total,
         'status': 'pending',
         'deliveryAddress': deliveryAddress,
+        'deliveryLocation': deliveryLocation, // Ajouté
+        'deliveryNotes': deliveryNotes, // Ajouté
         'createdAt': firestore.FieldValue.serverTimestamp(),
+        'viewedByAdmin': false,
       });
 
+      await _notifyAdmins(docRef.id);
       return docRef.id;
     } catch (e) {
       debugPrint('Error creating order: $e');
       rethrow;
+    }
+  }
+
+  Future<void> _notifyAdmins(String orderId) async {
+    try {
+      // 1. Récupérer tous les administrateurs
+      final admins =
+          await _firestore
+              .collection('users')
+              .where('isAdmin', isEqualTo: true)
+              .get();
+
+      // 2. Pour chaque admin, créer une notification
+      for (var admin in admins.docs) {
+        await _firestore.collection('notifications').add({
+          'userId': admin.id,
+          'orderId': orderId,
+          'type': 'new_order',
+          'read': false,
+          'createdAt': firestore.FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      debugPrint('Error notifying admins: $e');
     }
   }
 

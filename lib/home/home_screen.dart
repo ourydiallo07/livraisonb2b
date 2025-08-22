@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:livraisonb2b/account/product_detail_screen.dart';
+import 'package:livraisonb2b/global_utils/utils.dart';
 import 'package:livraisonb2b/models/product.dart';
 import 'package:livraisonb2b/provider_data/Login_data.dart';
 import 'package:livraisonb2b/provider_data/app_data.dart';
@@ -159,7 +160,7 @@ class HomeScreen extends StatelessWidget {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
-                    'Prix : ${product.price} FCFA',
+                    'Prix : ${Utils.formatPrice(product.price)}',
                     style: const TextStyle(
                       fontSize: 16,
                       color: Colors.green,

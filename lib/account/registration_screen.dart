@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 class RegistrationScreen extends StatefulWidget {
   static const String idScreen = '/registration';
 
-  const RegistrationScreen({Key? key}) : super(key: key);
+  const RegistrationScreen({super.key});
 
   @override
   _RegistrationScreenState createState() => _RegistrationScreenState();
