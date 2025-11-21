@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:livraisonb2b/constants/theme.dart';
@@ -22,7 +21,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final _nameController = TextEditingController();
   final _priceController = TextEditingController();
   final _descController = TextEditingController();
+  final _sacSizeController = TextEditingController(); // Added
   File? _selectedImage;
+  String _selectedUnit = 'kg'; // Added: Default unit is 'kg'
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -43,6 +44,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
       description: _descController.text,
       price: double.parse(_priceController.text),
       imageUrl: '',
+      unit: _selectedUnit,
+      sacSize:
+          _selectedUnit == 'sac' && _sacSizeController.text.isNotEmpty
+              ? int.parse(_sacSizeController.text)
+              : null,
     );
 
     try {
@@ -57,17 +63,24 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
       if (!mounted) return;
 
-      Navigator.pop(context); // Ferme le loading dialog
+      Navigator.pop(context); // Close loading dialog
       displayMessage("Produit ajouté avec succès!", context, false);
 
-      // Attendre un court instant avant de fermer l'écran
       await Future.delayed(const Duration(milliseconds: 500));
-      if (mounted) Navigator.pop(context); // Ferme l'écran d'ajout
+      if (mounted) Navigator.pop(context); // Close the add product screen
     } catch (e) {
-      if (mounted)
-        Navigator.pop(context); // Ferme le loading dialog en cas d'erreur
+      if (mounted) Navigator.pop(context); // Close loading dialog on error
       displayMessage("Erreur: ${e.toString()}", context, true);
     }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _priceController.dispose();
+    _descController.dispose();
+    _sacSizeController.dispose(); // Added
+    super.dispose();
   }
 
   @override
@@ -87,7 +100,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Section Image
+              // Image Section
               GestureDetector(
                 onTap: _pickImage,
                 child: Container(
@@ -129,7 +142,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               const SizedBox(height: 30),
 
-              // Nom du produit
+              // Product Name
               Text(
                 'Nom du produit',
                 style: TextStyle(
@@ -158,7 +171,117 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Prix
+              // Unit Selection
+              Text(
+                'Unité',
+                style: TextStyle(
+                  color: Colors.grey[700],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: _selectedUnit,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                ),
+                items:
+                    ['kg', 'sac'].map((String unit) {
+                      return DropdownMenuItem<String>(
+                        value: unit,
+                        child: Text(unit.toUpperCase()),
+                      );
+                    }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedUnit = value!;
+                  });
+                },
+                validator:
+                    (value) => value == null ? "Champ obligatoire" : null,
+              ),
+              const SizedBox(height: 20),
+
+              if (_selectedUnit == 'kg') ...[
+                Text(
+                  'Poids en (kg)',
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _sacSizeController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                    hintText: 'Entrez le poids en kG (ex. 1 )',
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                    suffixText: 'kg',
+                  ),
+                  validator:
+                      (value) =>
+                          value!.isEmpty
+                              ? "Champ obligatoire pour les produits en kg"
+                              : null,
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // Sac Size (visible only if unit is 'sac')
+              if (_selectedUnit == 'sac') ...[
+                Text(
+                  'Taille du sac (kg)',
+                  style: TextStyle(
+                    color: Colors.grey[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _sacSizeController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                    hintText: 'Entrez la taille du sac en kg (ex. 25)',
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                  validator:
+                      (value) =>
+                          value!.isEmpty
+                              ? "Champ obligatoire pour les sacs"
+                              : null,
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // Price
               Text(
                 'Prix (GNF)',
                 style: TextStyle(
@@ -217,7 +340,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               const SizedBox(height: 30),
 
-              // Bouton Enregistrer
+              // Save Button
               ElevatedButton(
                 onPressed: _submitForm,
                 style: ElevatedButton.styleFrom(

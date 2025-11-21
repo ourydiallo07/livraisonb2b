@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:livraisonb2b/constants/theme.dart';
 import 'package:livraisonb2b/main_screen.dart';
 import 'package:livraisonb2b/models/app_user.dart';
 import 'package:livraisonb2b/services/auth_service.dart';
@@ -43,24 +44,151 @@ class _ProfilScreenState extends State<ProfilScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final loginData = Provider.of<LoginData>(context);
+    final UserApp currentUser = loginData.currentUserApp;
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Profil")),
-      body: Center(
+      appBar: AppBar(
+        title: const Text("Profil"),
+        backgroundColor: AppColors.primaryGreen,
+        foregroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Page de profil"),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => _signOut(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    Colors.red, // Couleur rouge pour le bouton de déconnexion
-                foregroundColor: Colors.white,
+            Center(
+              child: Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.secondaryGreen,
+                  border: Border.all(color: AppColors.primaryGreen, width: 2),
+                ),
+                child: Icon(
+                  Icons.photo_camera,
+                  size: 40,
+                  color: AppColors.primaryGreen,
+                ),
               ),
-              child: const Text('Se déconnecter'),
+            ),
+
+            const SizedBox(height: 16),
+
+            Center(
+              child: Text(
+                "${currentUser.firstName ?? ''} ${currentUser.lastName ?? ''}"
+                        .trim()
+                        .isEmpty
+                    ? "Utilisateur"
+                    : "${currentUser.firstName} ${currentUser.lastName}",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Option: Numéro de téléphone (non modifiable)
+            _buildInfoDisplay(
+              icon: Icons.phone,
+              title: "Numéro de téléphone",
+              value:
+                  currentUser.phone?.isNotEmpty == true
+                      ? currentUser.phone!
+                      : "Non renseigné",
+            ),
+
+            const SizedBox(height: 16),
+
+            // Option 1: Modifier mon profil
+            _buildProfileOption(
+              icon: Icons.edit,
+              title: "Modifier mon profil",
+              onTap: () {
+                // Ajouter la navigation vers l'écran de modification du profil
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Fonctionnalité à implémenter")),
+                );
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Option 3: Déconnexion
+            _buildProfileOption(
+              icon: Icons.logout,
+              title: "Déconnexion",
+              color: Colors.orange,
+              onTap: () => _signOut(context),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileOption({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Color color = AppColors.primaryGreen,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: Icon(icon, color: color, size: 24),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: color == AppColors.primaryGreen ? AppColors.textDark : color,
+          ),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: AppColors.textGrey,
+        ),
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
+    );
+  }
+
+  Widget _buildInfoDisplay({
+    required IconData icon,
+    required String title,
+    required String value,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: Icon(icon, color: AppColors.textGrey, size: 24),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textDark,
+          ),
+        ),
+        subtitle: Text(
+          value,
+          style: TextStyle(fontSize: 14, color: AppColors.textGrey),
+        ),
+        // Pas de trailing arrow pour les informations non modifiables
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
         ),
       ),
     );

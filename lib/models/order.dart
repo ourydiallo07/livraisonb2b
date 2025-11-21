@@ -13,6 +13,13 @@ class Order {
   final GeoPoint? deliveryLocation;
   final String? deliveryAddress;
   final String? deliveryNotes;
+  final String? assignedDeliveryManId;
+  final String? assignedDeliveryManName;
+  final DateTime? assignedAt;
+  final DateTime? deliveredAt;
+
+  final bool isVisibleToDelivery; // Nouveau champ
+  final DateTime? shippedAt; // Nouveau champ
 
   Order({
     required this.id,
@@ -26,8 +33,29 @@ class Order {
     this.deliveryLocation,
     this.deliveryAddress,
     this.deliveryNotes,
+    this.assignedDeliveryManId,
+    this.assignedDeliveryManName,
+    this.assignedAt,
+    this.deliveredAt,
+    this.shippedAt,
+    this.isVisibleToDelivery = false,
     this.status = 'pending',
   });
+
+  double getTotalWeight() {
+    double totalWeight = 0.0;
+
+    for (final item in items) {
+      if (item.unit == 'sac' || item.unit?.contains('sac') == true) {
+        final sacWeight = item.sacSize?.toDouble() ?? 25.0;
+        totalWeight += item.quantity * sacWeight;
+      } else {
+        totalWeight += item.quantity.toDouble();
+      }
+    }
+
+    return totalWeight;
+  }
 
   // Méthode copyWith
   Order copyWith({
@@ -43,6 +71,12 @@ class Order {
     GeoPoint? deliveryLocation,
     String? deliveryAddress,
     String? deliveryNotes,
+    String? assignedDeliveryManId,
+    String? assignedDeliveryManName,
+    DateTime? assignedAt,
+    DateTime? deliveredAt,
+    DateTime? shippedAt,
+    bool? isVisibleToDelivery,
   }) {
     return Order(
       id: id ?? this.id,
@@ -58,6 +92,15 @@ class Order {
       deliveryNotes: deliveryNotes ?? this.deliveryNotes,
       total: total ?? this.total,
       status: status ?? this.status,
+
+      assignedDeliveryManId:
+          assignedDeliveryManId ?? this.assignedDeliveryManId,
+      assignedDeliveryManName:
+          assignedDeliveryManName ?? this.assignedDeliveryManName,
+      assignedAt: assignedAt ?? this.assignedAt,
+      deliveredAt: deliveredAt ?? this.deliveredAt,
+      shippedAt: shippedAt ?? this.shippedAt,
+      isVisibleToDelivery: isVisibleToDelivery ?? this.isVisibleToDelivery,
     );
   }
 
@@ -85,6 +128,23 @@ class Order {
       deliveryLocation: data['deliveryLocation'] as GeoPoint?,
       deliveryAddress: data['deliveryAddress'],
       deliveryNotes: data['deliveryNotes'],
+
+      assignedDeliveryManId: data['assignedDeliveryManId'],
+      assignedDeliveryManName: data['assignedDeliveryManName'],
+      assignedAt:
+          data['assignedAt'] != null
+              ? (data['assignedAt'] as Timestamp).toDate()
+              : null,
+      deliveredAt:
+          data['deliveredAt'] != null
+              ? (data['deliveredAt'] as Timestamp).toDate()
+              : null,
+      shippedAt:
+          data['shippedAt'] !=
+                  null // Ajouté
+              ? (data['shippedAt'] as Timestamp).toDate()
+              : null,
+      isVisibleToDelivery: data['isVisibleToDelivery'] ?? false,
     );
   }
 
@@ -103,8 +163,16 @@ class Order {
       'deliveryLocation': deliveryLocation,
       'deliveryAddress': deliveryAddress,
       'deliveryNotes': deliveryNotes,
+      'assignedDeliveryManId': assignedDeliveryManId,
+      'assignedDeliveryManName': assignedDeliveryManName,
+      'assignedAt': assignedAt != null ? Timestamp.fromDate(assignedAt!) : null,
+      'deliveredAt':
+          deliveredAt != null ? Timestamp.fromDate(deliveredAt!) : null,
 
       'createdAt': FieldValue.serverTimestamp(),
+      'shippedAt':
+          shippedAt != null ? Timestamp.fromDate(shippedAt!) : null, // Ajouté
+      'isVisibleToDelivery': isVisibleToDelivery,
     };
   }
 }
@@ -115,6 +183,8 @@ class OrderItem {
   final int quantity;
   final double price;
   final String? imageUrl;
+  final String unit;
+  final int? sacSize;
 
   OrderItem({
     required this.productId,
@@ -122,6 +192,8 @@ class OrderItem {
     required this.quantity,
     required this.price,
     this.imageUrl,
+    required this.unit,
+    this.sacSize,
   });
 
   // Conversion depuis Map
@@ -132,6 +204,8 @@ class OrderItem {
       quantity: map['quantity'],
       price: map['price'],
       imageUrl: map['imageUrl'],
+      unit: map['unit'] ?? 'kg',
+      sacSize: map['sacSize'],
     );
   }
 
@@ -143,6 +217,8 @@ class OrderItem {
       'quantity': quantity,
       'price': price,
       'imageUrl': imageUrl,
+      'unit': unit,
+      'sacSize': sacSize,
     };
   }
 }

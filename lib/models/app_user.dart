@@ -12,6 +12,7 @@ class UserApp {
   int? bonus = 3;
   String? token;
   bool isAdmin;
+  bool isDeliveryMan;
   String? address;
   GeoPoint? location;
   double? personalDiscount;
@@ -29,6 +30,7 @@ class UserApp {
     this.bonus,
     this.token,
     this.isAdmin = false,
+    this.isDeliveryMan = false,
     this.address,
     this.location,
     this.personalDiscount,
@@ -48,6 +50,7 @@ class UserApp {
       'bonus': bonus,
       'token': token,
       'isAdmin': isAdmin,
+      'isDeliveryMan': isDeliveryMan,
       'address': address,
       'location': location,
 
@@ -82,6 +85,8 @@ class UserApp {
       bonus: map['bonus'] != null ? map['bonus'] as int : null,
       token: map['token'] as String?,
       isAdmin: map['isAdmin'] != null ? map['isAdmin'] as bool : false,
+      isDeliveryMan:
+          map['isDeliveryMan'] != null ? map['isDeliveryMan'] as bool : false,
       address: map['address'] as String?,
       location: map['location'] as GeoPoint?,
 
@@ -131,6 +136,7 @@ class UserApp {
         'bonus: $bonus, '
         'token: $token, '
         'isAdmin: $isAdmin, '
+        'isDeliveryMan: $isDeliveryMan'
         'address: $address, '
         'location: $location'
         'personalDiscount: $personalDiscount%, '
@@ -149,6 +155,7 @@ class UserApp {
     int? bonus,
     String? token,
     bool? isAdmin,
+    bool? isDeliveryMan,
     String? address,
     GeoPoint? location,
     double? personalDiscount,
@@ -166,6 +173,7 @@ class UserApp {
       bonus: bonus ?? this.bonus,
       token: token ?? this.token,
       isAdmin: isAdmin ?? this.isAdmin,
+      isDeliveryMan: isDeliveryMan ?? this.isDeliveryMan,
       address: address ?? this.address,
       location: location ?? this.location,
       personalDiscount: personalDiscount ?? this.personalDiscount,

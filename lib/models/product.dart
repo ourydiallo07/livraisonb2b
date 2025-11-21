@@ -9,16 +9,20 @@ class Product {
   final String? category;
   final int? stock;
   final DateTime? createdAt;
+  final String unit;
+  final int? sacSize;
 
   Product({
     required this.id,
     required this.name,
     required this.price,
+    required this.unit,
     this.imageUrl,
     this.description,
     this.category,
     this.stock,
     this.createdAt,
+    this.sacSize,
   });
 
   // Convertir Product en Map pour Firestore
@@ -32,6 +36,8 @@ class Product {
       'category': category,
       'stock': stock,
       'createdAt': createdAt?.toIso8601String(),
+      'unit': unit,
+      'sacSize': sacSize,
     };
   }
 
@@ -49,6 +55,8 @@ class Product {
           map['createdAt'] != null
               ? DateTime.parse(map['createdAt'] as String)
               : null,
+      unit: map['unit'] as String? ?? 'kg',
+      sacSize: map['sacSize'] as int?,
     );
   }
 
@@ -64,6 +72,8 @@ class Product {
       category: data['category'] as String?,
       stock: data['stock'] as int?,
       createdAt: data['createdAt']?.toDate(),
+      unit: data['unit'] as String? ?? 'kg',
+      sacSize: data['sacSize'] as int?,
     );
   }
 
@@ -77,6 +87,8 @@ class Product {
     String? category,
     int? stock,
     DateTime? createdAt,
+    String? unit,
+    int? sacSize,
   }) {
     return Product(
       id: id ?? this.id,
@@ -87,12 +99,14 @@ class Product {
       category: category ?? this.category,
       stock: stock ?? this.stock,
       createdAt: createdAt ?? this.createdAt,
+      unit: unit ?? this.unit,
+      sacSize: sacSize ?? this.sacSize,
     );
   }
 
   @override
   String toString() {
-    return 'Product(id: $id, name: $name, price: $price, imageUrl: $imageUrl)';
+    return 'Product(id: $id, name: $name, price: $price, imageUrl: $imageUrl,unit: $unit, sacSize: $sacSize)';
   }
 
   @override
@@ -107,7 +121,9 @@ class Product {
         other.description == description &&
         other.category == category &&
         other.stock == stock &&
-        other.createdAt == createdAt;
+        other.createdAt == createdAt &&
+        other.unit == unit &&
+        other.sacSize == sacSize;
   }
 
   @override
@@ -119,6 +135,8 @@ class Product {
         description.hashCode ^
         category.hashCode ^
         stock.hashCode ^
-        createdAt.hashCode;
+        createdAt.hashCode ^
+        unit.hashCode ^
+        sacSize.hashCode;
   }
 }

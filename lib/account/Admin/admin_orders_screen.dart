@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:livraisonb2b/account/Admin/order_weight_details_screen.dart';
 import 'package:livraisonb2b/constants/order_status.dart';
 import 'package:livraisonb2b/global_utils/utils.dart';
 import 'package:livraisonb2b/models/order.dart';
@@ -48,9 +49,8 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
       ),
       body: Column(
         children: [
-          // Barre de recherche et filtres
           _buildFilterBar(),
-          // Liste des commandes
+          _buildStatisticsSummary(orderProvider),
           Expanded(
             child: StreamBuilder<List<Order>>(
               stream: orderProvider.getAllOrders(),
@@ -80,10 +80,7 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                   );
                 }
 
-                // Filtrer et trier les commandes
                 final filteredOrders = _filterOrders(orders);
-
-                // Trier par date (les plus récentes en premier)
                 filteredOrders.sort(
                   (a, b) =>
                       (b.date ?? DateTime(0)).compareTo(a.date ?? DateTime(0)),
@@ -91,7 +88,6 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
 
                 return RefreshIndicator(
                   onRefresh: () async {
-                    // Forcer le rafraîchissement en reconstruisant le widget
                     setState(() {});
                     await Future.delayed(const Duration(milliseconds: 500));
                   },
@@ -108,14 +104,101 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
     );
   }
 
-  // Barre de filtres et recherche
+  Widget _buildStatisticsSummary(OrderProvider orderProvider) {
+    return StreamBuilder<List<Order>>(
+      stream: orderProvider.getAllOrders(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox();
+
+        final orders = snapshot.data!;
+        final filteredOrders = _filterOrders(orders);
+
+        if (filteredOrders.isEmpty) return const SizedBox();
+
+        final totalWeight = filteredOrders.fold<double>(
+          0.0,
+          (sum, order) => sum + order.getTotalWeight(),
+        );
+        final totalAmount = filteredOrders.fold<double>(
+          0.0,
+          (sum, order) => sum + order.total,
+        );
+        final totalOrders = filteredOrders.length;
+
+        return Container(
+          padding: const EdgeInsets.all(12),
+          color: Colors.grey[50],
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildStatisticItem(
+                'Commandes',
+                totalOrders.toString(),
+                Icons.receipt,
+                AppColors.primaryColor,
+              ),
+              _buildStatisticItem(
+                'Poids Total',
+                '${totalWeight.toStringAsFixed(1)} kg',
+                Icons.scale,
+                Colors.blue,
+              ),
+              _buildStatisticItem(
+                'Montant Total',
+                Utils.formatPrice(totalAmount),
+                Icons.attach_money,
+                Colors.green,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Dans la méthode _buildStatisticsSummary, modifiez le widget pour le poids total :
+  Widget _buildStatisticItem(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return GestureDetector(
+      onTap:
+          title == 'Poids Total'
+              ? () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const OrderWeightDetailsScreen(),
+                  ),
+                );
+              }
+              : null,
+      child: Column(
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(title, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFilterBar() {
     return Container(
       padding: const EdgeInsets.all(12),
       color: Colors.grey[50],
       child: Column(
         children: [
-          // Barre de recherche
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
@@ -139,7 +222,6 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
             onChanged: (value) => setState(() {}),
           ),
           const SizedBox(height: 12),
-          // Double ligne de filtres
           Row(
             children: [
               Expanded(
@@ -243,17 +325,14 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
     );
   }
 
-  // Filtrer les commandes selon les critères
   List<Order> _filterOrders(List<Order> orders) {
     var filtered = orders;
 
-    // Filtre par statut
     if (_filterStatus != 'Tous') {
       filtered =
           filtered.where((order) => order.status == _filterStatus).toList();
     }
 
-    // Filtre par date
     final now = DateTime.now();
     if (_dateFilter == 'Aujourd\'hui') {
       filtered =
@@ -270,7 +349,6 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
           filtered.where((order) => _isSameMonth(order.date, now)).toList();
     }
 
-    // Filtre par recherche
     if (_searchController.text.isNotEmpty) {
       final searchLower = _searchController.text.toLowerCase();
       filtered =
@@ -296,13 +374,10 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
 
   bool _isSameWeek(DateTime? date, DateTime reference) {
     if (date == null) return false;
-
-    // Trouver le début de la semaine (lundi)
     final startOfWeek = reference.subtract(
       Duration(days: reference.weekday - 1),
     );
     final endOfWeek = startOfWeek.add(const Duration(days: 6));
-
     return date.isAfter(startOfWeek.subtract(const Duration(days: 1))) &&
         date.isBefore(endOfWeek.add(const Duration(days: 1)));
   }
@@ -313,7 +388,6 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
   }
 
   Widget _buildGroupedView(List<Order> orders) {
-    // Grouper par date d'abord, puis par utilisateur
     final dateGroups = <String, Map<String, List<Order>>>{};
 
     for (final order in orders) {
@@ -385,6 +459,10 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
       (sum, order) => sum + order.items.length,
     );
     final totalAmount = userOrders.fold(0.0, (sum, order) => sum + order.total);
+    final totalWeight = userOrders.fold(
+      0.0,
+      (sum, order) => sum + order.getTotalWeight(),
+    );
     final hasPendingOrders = userOrders.any(
       (order) => order.status == OrderStatus.pending,
     );
@@ -440,19 +518,42 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                '${userOrders.length} commande${userOrders.length > 1 ? 's' : ''}',
-                style: TextStyle(color: Colors.grey[600]),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${userOrders.length} commande${userOrders.length > 1 ? 's' : ''}',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  Text(
+                    Utils.formatPrice(totalAmount),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
               ),
-              Text(
-                Utils.formatPrice(totalAmount),
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green,
-                ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Poids total:',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                  Text(
+                    '${totalWeight.toStringAsFixed(1)} kg',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -475,7 +576,6 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
   Widget _buildListView(List<Order> orders) {
     if (orders.isEmpty) return _buildEmptyState();
 
-    // Grouper les commandes par date pour la vue liste
     final dateGroups = <String, List<Order>>{};
 
     for (final order in orders) {
@@ -538,6 +638,8 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
   }
 
   Widget _buildOrderCard(Order order, {bool showUserInfo = true}) {
+    final totalWeight = order.getTotalWeight();
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       elevation: 2,
@@ -613,9 +715,23 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '${order.items.length} article(s)',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${order.items.length} article(s)',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Poids: ${totalWeight.toStringAsFixed(1)} kg',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                   _buildStatusBadge(order.status),
                 ],
@@ -711,6 +827,8 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
   }
 
   void _showOrderDetails(BuildContext context, Order order) {
+    final totalWeight = order.getTotalWeight();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -756,6 +874,11 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                     OrderStatus.getFrenchTranslation(order.status),
                     valueColor: _getStatusColor(order.status),
                   ),
+                  _buildDetailItem(
+                    'Poids Total',
+                    '${totalWeight.toStringAsFixed(1)} kg',
+                    valueColor: Colors.blue,
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'Articles',
@@ -773,8 +896,20 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                               )
                               : const Icon(Icons.shopping_basket),
                       title: Text(item.name),
-                      subtitle: Text(
-                        '${item.quantity} x ${Utils.formatPrice(item.price)}',
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${item.quantity} x ${Utils.formatPrice(item.price)}',
+                          ),
+                          Text(
+                            'Poids: ${_calculateItemWeight(item).toStringAsFixed(1)} kg',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
                       ),
                       trailing: Text(
                         Utils.formatPrice(item.price * item.quantity),
@@ -792,13 +927,26 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text(
-                        Utils.formatPrice(order.total),
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            Utils.formatPrice(order.total),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                          Text(
+                            '${totalWeight.toStringAsFixed(1)} kg',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.blue,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -842,6 +990,15 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
         ],
       ),
     );
+  }
+
+  double _calculateItemWeight(OrderItem item) {
+    if (item.unit == 'sac' || item.unit?.contains('sac') == true) {
+      final sacWeight = item.sacSize?.toDouble() ?? 25.0;
+      return item.quantity * sacWeight;
+    } else {
+      return item.quantity.toDouble();
+    }
   }
 
   Color _getStatusColor(String status) {

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
 import 'package:flutter/material.dart';
+import 'package:livraisonb2b/constants/order_status.dart';
 import 'package:livraisonb2b/models/order.dart';
 
 class OrderProvider with ChangeNotifier {
@@ -102,21 +103,104 @@ class OrderProvider with ChangeNotifier {
     }
   }
 
+  // Récupère toutes les commandes expédiées (visibles par tous les livreurs)
+  Stream<List<Order>> getAllShippedOrders() {
+    return _firestore
+        .collection('orders')
+        .where('status', isEqualTo: OrderStatus.shipped)
+        .where('isVisibleToDelivery', isEqualTo: true)
+        .orderBy('shippedAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map(Order.fromFirestore).toList());
+  }
+
   Future<void> updateOrderStatus(String orderId, String newStatus) async {
     try {
+      final updateData = <String, dynamic>{'status': newStatus};
+
+      // Si le statut est "shipped", rendre visible à TOUS les livreurs
+      if (newStatus == OrderStatus.shipped) {
+        updateData['isVisibleToDelivery'] = true;
+        updateData['shippedAt'] = firestore.FieldValue.serverTimestamp();
+        // On ne assigne PAS de livreur spécifique - visible par tous
+      }
+
+      // Si le statut est "delivered", enregistrer la date de livraison
+      if (newStatus == OrderStatus.delivered) {
+        updateData['deliveredAt'] = firestore.FieldValue.serverTimestamp();
+      }
+
+      await _firestore.collection('orders').doc(orderId).update(updateData);
+
+      // Update local state
+      final index = _orders.indexWhere((order) => order.id == orderId);
+      if (index >= 0) {
+        _orders[index] = _orders[index].copyWith(
+          status: newStatus,
+          isVisibleToDelivery:
+              newStatus == OrderStatus.shipped
+                  ? true
+                  : _orders[index].isVisibleToDelivery,
+          shippedAt:
+              newStatus == OrderStatus.shipped
+                  ? DateTime.now()
+                  : _orders[index].shippedAt,
+          deliveredAt:
+              newStatus == OrderStatus.delivered
+                  ? DateTime.now()
+                  : _orders[index].deliveredAt,
+        );
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error updating order status: $e');
+      rethrow;
+    }
+  }
+
+  // Nouvelle méthode pour récupérer les commandes visibles par les livreurs
+  Stream<List<Order>> getOrdersForDelivery() {
+    return _firestore
+        .collection('orders')
+        .where('isVisibleToDelivery', isEqualTo: true)
+        .where('status', whereIn: [OrderStatus.shipped, OrderStatus.processing])
+        .orderBy('shippedAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map(Order.fromFirestore).toList());
+  }
+
+  // Méthode pour marquer une commande comme livrée
+  Future<void> markAsDelivered(String orderId) async {
+    try {
       await _firestore.collection('orders').doc(orderId).update({
-        'status': newStatus,
+        'status': OrderStatus.delivered,
+        'deliveredAt': firestore.FieldValue.serverTimestamp(),
       });
 
       // Update local state
       final index = _orders.indexWhere((order) => order.id == orderId);
       if (index >= 0) {
-        _orders[index] = _orders[index].copyWith(status: newStatus);
+        _orders[index] = _orders[index].copyWith(
+          status: OrderStatus.delivered,
+          deliveredAt: DateTime.now(),
+        );
         notifyListeners();
       }
     } catch (e) {
-      debugPrint('Error updating order status: $e');
+      debugPrint('Error marking order as delivered: $e');
+      rethrow;
     }
+  }
+
+  // Dans la classe OrderProvider
+  Stream<List<Order>> getOrdersForDeliveryMan(String deliveryManId) {
+    return _firestore
+        .collection('orders')
+        .where('isVisibleToDelivery', isEqualTo: true)
+        .where('status', whereIn: [OrderStatus.shipped, OrderStatus.delivered])
+        .orderBy('shippedAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map(Order.fromFirestore).toList());
   }
 
   Future<Map<String, int>> getOrdersCountByStatus() async {

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:livraisonb2b/account/Admin/admin_home_screen.dart';
+import 'package:livraisonb2b/account/Delivery/delivery_main_screen.dart';
 import 'package:livraisonb2b/account/edit_profile.dart';
 import 'package:livraisonb2b/account/otp_input_screen.dart';
 import 'package:livraisonb2b/global_utils/utils.dart';
@@ -126,7 +127,7 @@ class AuthService {
           loginProvider.updateUserApp(newUserApp);
 
           if (context.mounted) {
-            displayMessage("Compte créé", context, false);
+            displayMessage("Compte créé avec succès", context, false);
             Navigator.pushNamedAndRemoveUntil(
               context,
               EditProfile.idScreen,
@@ -138,14 +139,23 @@ class AuthService {
           loginProvider.updateUserApp(userApp);
 
           if (context.mounted) {
-            // Redirection en fonction du statut admin
+            // Redirection en fonction du type d'utilisateur
             if (userApp.isAdmin == true) {
+              // Utilisateur Admin
               Navigator.pushNamedAndRemoveUntil(
                 context,
-                AdminHomeScreen.idScreen,
+                MainScreen.idScreen,
+                (route) => false,
+              );
+            } else if (userApp.isDeliveryMan == true) {
+              // Utilisateur Livreur
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                DeliveryMainScreen.idScreen,
                 (route) => false,
               );
             } else {
+              // Utilisateur normal
               Navigator.pushNamedAndRemoveUntil(
                 context,
                 MainScreen.idScreen,
@@ -154,6 +164,11 @@ class AuthService {
             }
           }
         }
+      } else {
+        throw FirebaseAuthException(
+          code: 'invalid-phone-number',
+          message: 'Numéro de téléphone non valide',
+        );
       }
     } on FirebaseAuthException catch (error) {
       if (context.mounted) {

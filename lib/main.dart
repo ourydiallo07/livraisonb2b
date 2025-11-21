@@ -11,6 +11,7 @@ import 'package:livraisonb2b/account/Admin/admin_home_screen.dart';
 import 'package:livraisonb2b/account/Admin/admin_orders_screen.dart';
 import 'package:livraisonb2b/account/Admin/admin_stats_screen.dart';
 import 'package:livraisonb2b/account/Admin/admin_users_screen.dart';
+import 'package:livraisonb2b/account/Delivery/delivery_main_screen.dart';
 import 'package:livraisonb2b/account/add_product_screen.dart';
 import 'package:livraisonb2b/account/edit_profile.dart';
 import 'package:livraisonb2b/amplifyconfiguration.dart';
@@ -125,6 +126,7 @@ class MyApp extends StatelessWidget {
         AdminUsersScreen.idScreen: (context) => const AdminUsersScreen(),
         AdminOrdersScreen.idScreen: (context) => const AdminOrdersScreen(),
         AdminStatsScreen.idScreen: (context) => const AdminStatsScreen(),
+        DeliveryMainScreen.idScreen: (context) => const DeliveryMainScreen(),
       },
     );
   }

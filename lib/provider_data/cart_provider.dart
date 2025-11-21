@@ -245,6 +245,7 @@ class CartProvider with ChangeNotifier {
                 quantity: item.quantity,
                 price: item.price,
                 imageUrl: item.imageUrl,
+                unit: item.unit ?? 'kg',
               ),
             )
             .toList();

@@ -111,8 +111,9 @@ class HomeScreen extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // IMAGE AGRANDIE
                 Expanded(
-                  flex: 2,
+                  flex: 8, // Réduit à 8 au lieu de 10 pour équilibrer
                   child: ClipRRect(
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(10),
@@ -133,44 +134,68 @@ class HomeScreen extends StatelessWidget {
                             ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8.0,
-                    vertical: 4.0,
-                  ),
-                  child: Text(
-                    product.name,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Text(
-                    product.description ?? '',
-                    style: const TextStyle(fontSize: 14),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
+                // CONTENU TEXTUEL - réorganisé pour éviter le débordement
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    'Prix : ${Utils.formatPrice(product.price)}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.green,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min, // Important
+                    children: [
+                      Text(
+                        product.name,
+                        style: const TextStyle(
+                          fontSize: 16, // Légèrement réduit
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        product.description ?? '',
+                        style: const TextStyle(fontSize: 12), // Réduit
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            product.unit,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.green,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          if (product.sacSize != null) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              '${product.sacSize}kg',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.green,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Prix : ${Utils.formatPrice(product.price)}',
+                        style: const TextStyle(
+                          fontSize: 14, // Réduit
+                          color: Colors.green,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            // Bouton d'ajout au panier
+            // Boutons positionnés (inchangés)
             Positioned(
               top: 8,
               right: 8,
@@ -201,7 +226,6 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             ),
-            // Dans le Stack de chaque produit, remplacez la condition par :
             Positioned(
               top: 8,
               left: 8,

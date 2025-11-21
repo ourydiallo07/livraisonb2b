@@ -16,6 +16,7 @@ class ProductProvider with ChangeNotifier {
       description: 'Délicieux poulet braisé avec accompagnement',
       price: 5000,
       imageUrl: 'assets/images/poulet.jpg',
+      unit: '24 kg',
     ),
     Product(
       id: 'p2',
@@ -23,6 +24,7 @@ class ProductProvider with ChangeNotifier {
       description: 'Jus naturel frais et sucré',
       price: 1500,
       imageUrl: 'assets/images/jus-bissap.jpg',
+      unit: '10 Kg',
     ),
     Product(
       id: 'p3',
@@ -30,6 +32,7 @@ class ProductProvider with ChangeNotifier {
       description: 'Oignons frais pour vos plats',
       price: 1000,
       imageUrl: 'assets/images/oignon.jpg',
+      unit: '13kg',
     ),
     Product(
       id: 'p4',
@@ -37,6 +40,7 @@ class ProductProvider with ChangeNotifier {
       description: 'Pommes de terre de qualité',
       price: 2000,
       imageUrl: 'assets/images/pomme de terre.jpg',
+      unit: '25 kg ',
     ),
   ];
 
@@ -79,6 +83,12 @@ class ProductProvider with ChangeNotifier {
           message: 'Le prix doit être positif',
         );
       }
+      if (product.unit == 'sac' && product.sacSize == null) {
+        throw AppError(
+          AppErrorType.invalidInput,
+          message: 'La taille du sac est obligatoire pour les produits en sacs',
+        );
+      }
 
       String? imageUrl;
       String? imageKey;
@@ -102,6 +112,8 @@ class ProductProvider with ChangeNotifier {
         'imageUrl': imageUrl,
         'createdAt': FieldValue.serverTimestamp(),
         'ownerId': FirebaseAuth.instance.currentUser?.uid,
+        'unit': product.unit,
+        'sacSize': product.sacSize,
       });
 
       await batch.commit();
