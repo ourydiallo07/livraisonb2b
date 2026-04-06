@@ -27,6 +27,7 @@ import 'package:livraisonb2b/provider_data/product_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:livraisonb2b/account/registration_screen.dart';
 import 'package:livraisonb2b/firebase_options.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 Future<void> _configureAmplify() async {
   try {
@@ -62,6 +63,8 @@ Future<void> _configureFirebaseEmulators() async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: ".env");
 
   // Initialisation Firebase
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);

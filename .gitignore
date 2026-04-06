@@ -65,3 +65,14 @@ amplifytools.xcconfig
 .secret-*
 **.sample
 #amplify-do-not-edit-end
+
+# Firebase config files
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+android\app\src\main\AndroidManifest.xml
+# Clés privées
+android/gradle.properties
+# Firebase keys
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist
+.env
