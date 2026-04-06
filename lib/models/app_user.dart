@@ -13,6 +13,7 @@ class UserApp {
   String? token;
   bool isAdmin;
   bool isDeliveryMan;
+  bool isAgent;
   String? address;
   GeoPoint? location;
   double? personalDiscount;
@@ -35,6 +36,7 @@ class UserApp {
     this.location,
     this.personalDiscount,
     this.bonusThreshold,
+    this.isAgent = false,
     this.bonusRate,
     this.discountHistory,
   });
@@ -51,9 +53,9 @@ class UserApp {
       'token': token,
       'isAdmin': isAdmin,
       'isDeliveryMan': isDeliveryMan,
+      'isAgent': isAgent,
       'address': address,
       'location': location,
-
       'personalDiscount': personalDiscount,
       'bonusThreshold': bonusThreshold,
       'bonusRate': bonusRate,
@@ -88,6 +90,7 @@ class UserApp {
       isDeliveryMan:
           map['isDeliveryMan'] != null ? map['isDeliveryMan'] as bool : false,
       address: map['address'] as String?,
+      isAgent: map['isAgent'] != null ? map['isAgent'] as bool : false,
       location: map['location'] as GeoPoint?,
 
       personalDiscount: map['personalDiscount']?.toDouble(),

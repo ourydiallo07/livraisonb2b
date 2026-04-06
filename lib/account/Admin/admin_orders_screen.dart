@@ -671,10 +671,21 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // AFFICHER LE NOM DU CLIENT POUR QUI LA COMMANDE EST FAITE
                           Text(
                             '${order.userfirstName} ${order.userlastName}',
                             style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
+                          // AFFICHER L'AGENT SI C'EST LE CAS
+                          if (order.orderedByAgentName != null)
+                            Text(
+                              'Commandé par: ${order.orderedByAgentName}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.purple[600],
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
                           Text(
                             order.userphone,
                             style: TextStyle(
@@ -861,6 +872,13 @@ class _AdminOrdersScreenState extends State<AdminOrdersScreen> {
                     '${order.userfirstName} ${order.userlastName}',
                   ),
                   _buildDetailItem('Téléphone', order.userphone),
+
+                  if (order.orderedByAgentName != null)
+                    _buildDetailItem(
+                      'Commandé par',
+                      '${order.orderedByAgentName} (Agent)',
+                      valueColor: Colors.purple,
+                    ),
                   if (order.deliveryAddress != null)
                     _buildDetailItem('Adresse', order.deliveryAddress!),
                   _buildDetailItem(

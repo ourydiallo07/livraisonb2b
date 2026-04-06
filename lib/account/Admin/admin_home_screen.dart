@@ -14,7 +14,6 @@ class AdminHomeScreen extends StatelessWidget {
 
   Future<void> _signOut(BuildContext context) async {
     try {
-      // Appeler la méthode de déconnexion du service d'authentification
       await AuthService.signOutAppUser();
 
       // Réinitialiser les données de l'utilisateur dans le provider

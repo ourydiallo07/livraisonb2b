@@ -19,7 +19,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   final _phoneController = TextEditingController();
   final _focusNode = FocusNode();
-  final String _countryCode = '+224';
+  final String _countryCode = '+212';
   final Color primaryColor = const Color(0xFF4CAF50);
 
   @override
@@ -35,66 +35,102 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       resizeToAvoidBottomInset: true,
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Container(
-            padding: const EdgeInsets.all(24.0),
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height,
+        child: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage("assets/images/bg.jpg"),
+              fit: BoxFit.cover,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Saisissez votre numéro de téléphone pour recevoir un code de confirmation de notre part dessus.',
-                  style: TextStyle(fontSize: 16, color: Colors.black87),
-                ),
-                const SizedBox(height: 40),
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      PhoneNumberInput(
-                        controller: _phoneController,
-                        countryCode: _countryCode,
-                        focusNode: _focusNode,
-                      ),
-                      const SizedBox(height: 30),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            final loginData = Provider.of<LoginData>(
-                              context,
-                              listen: false,
-                            );
-                            loginData.authPhoneNumber =
-                                _countryCode + _phoneController.text.trim();
-                            registerUser(context, loginData);
-                          },
-
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'RECEVOIR LE CODE',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.7),
+                  Colors.black.withOpacity(0.5),
+                  Colors.black.withOpacity(0.7),
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
+            ),
+            child: SafeArea(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Expanded(child: Container()),
+                  Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Saisissez votre numéro de téléphone pour recevoir un code de confirmation de notre part dessus.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                offset: Offset(0, 1),
+                                blurRadius: 3.0,
+                                color: Colors.black54,
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 40),
+                        Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
+                              PhoneNumberInput(
+                                controller: _phoneController,
+                                countryCode: _countryCode,
+                                focusNode: _focusNode,
+                              ),
+                              const SizedBox(height: 30),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    final loginData = Provider.of<LoginData>(
+                                      context,
+                                      listen: false,
+                                    );
+                                    loginData.authPhoneNumber =
+                                        _countryCode +
+                                        _phoneController.text.trim();
+                                    registerUser(context, loginData);
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: primaryColor,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: const Text(
+                                    'RECEVOIR LE CODE',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

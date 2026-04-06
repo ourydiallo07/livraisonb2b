@@ -18,8 +18,12 @@ class Order {
   final DateTime? assignedAt;
   final DateTime? deliveredAt;
 
-  final bool isVisibleToDelivery; // Nouveau champ
-  final DateTime? shippedAt; // Nouveau champ
+  final bool isVisibleToDelivery;
+  final double? distanceInMeters;
+  final DateTime? shippedAt;
+
+  final String? orderedByAgentId;
+  final String? orderedByAgentName;
 
   Order({
     required this.id,
@@ -31,6 +35,7 @@ class Order {
     required this.items,
     required this.total,
     this.deliveryLocation,
+    this.distanceInMeters,
     this.deliveryAddress,
     this.deliveryNotes,
     this.assignedDeliveryManId,
@@ -39,6 +44,8 @@ class Order {
     this.deliveredAt,
     this.shippedAt,
     this.isVisibleToDelivery = false,
+    this.orderedByAgentId,
+    this.orderedByAgentName,
     this.status = 'pending',
   });
 
@@ -69,10 +76,13 @@ class Order {
     double? total,
     String? status,
     GeoPoint? deliveryLocation,
+    double? distanceInMeters,
     String? deliveryAddress,
     String? deliveryNotes,
     String? assignedDeliveryManId,
     String? assignedDeliveryManName,
+    String? orderedByAgentId,
+    String? orderedByAgentName,
     DateTime? assignedAt,
     DateTime? deliveredAt,
     DateTime? shippedAt,
@@ -86,6 +96,7 @@ class Order {
       userId: userId ?? this.userId,
       date: date ?? this.date,
       items: items ?? this.items,
+      distanceInMeters: distanceInMeters ?? this.distanceInMeters,
 
       deliveryLocation: deliveryLocation ?? this.deliveryLocation,
       deliveryAddress: deliveryAddress ?? this.deliveryAddress,
@@ -99,6 +110,8 @@ class Order {
           assignedDeliveryManName ?? this.assignedDeliveryManName,
       assignedAt: assignedAt ?? this.assignedAt,
       deliveredAt: deliveredAt ?? this.deliveredAt,
+      orderedByAgentId: orderedByAgentId ?? this.orderedByAgentId,
+      orderedByAgentName: orderedByAgentName ?? this.orderedByAgentName,
       shippedAt: shippedAt ?? this.shippedAt,
       isVisibleToDelivery: isVisibleToDelivery ?? this.isVisibleToDelivery,
     );
@@ -145,6 +158,8 @@ class Order {
               ? (data['shippedAt'] as Timestamp).toDate()
               : null,
       isVisibleToDelivery: data['isVisibleToDelivery'] ?? false,
+      orderedByAgentId: data['orderedByAgentId'],
+      orderedByAgentName: data['orderedByAgentName'],
     );
   }
 
@@ -173,6 +188,9 @@ class Order {
       'shippedAt':
           shippedAt != null ? Timestamp.fromDate(shippedAt!) : null, // Ajouté
       'isVisibleToDelivery': isVisibleToDelivery,
+
+      'orderedByAgentId': orderedByAgentId,
+      'orderedByAgentName': orderedByAgentName,
     };
   }
 }

@@ -16,14 +16,11 @@ class ProfilScreen extends StatefulWidget {
 class _ProfilScreenState extends State<ProfilScreen> {
   Future<void> _signOut(BuildContext context) async {
     try {
-      // Appeler la méthode de déconnexion du service d'authentification
       await AuthService.signOutAppUser();
 
-      // Réinitialiser les données de l'utilisateur dans le provider
       final loginData = Provider.of<LoginData>(context, listen: false);
-      loginData.updateUserApp(UserApp()); // Réinitialiser à un utilisateur vide
+      loginData.updateUserApp(UserApp());
 
-      // Rediriger vers l'écran principal (qui devrait rediriger vers le login)
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(
           context,

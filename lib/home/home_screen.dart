@@ -24,53 +24,101 @@ class HomeScreen extends StatelessWidget {
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Accueil")),
+      backgroundColor: Colors.green.shade800, // fond général vert foncé
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ==================== Section haut (Bonjour + Recherche) ====================
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              "Bonjour $lastName 👋",
-              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+            padding: const EdgeInsets.fromLTRB(16, 40, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Bonjour $lastName 👋",
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Barre de recherche capsule
+                _buildSearchBar(context, productProvider),
+              ],
             ),
           ),
+
+          // ==================== Carte blanche flottante ====================
           Expanded(
-            child: StreamBuilder<List<Product>>(
-              stream: productProvider.combinedProductsStream,
-              builder: (ctx, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return Center(child: Text("Erreur: ${snapshot.error}"));
-                }
-
-                final products = snapshot.data ?? [];
-
-                if (products.isEmpty) {
-                  return const Center(child: Text("Aucun produit disponible"));
-                }
-
-                return GridView.builder(
-                  padding: const EdgeInsets.all(10),
-                  itemCount: products.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 3 / 4,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                  ),
-                  itemBuilder:
-                      (ctx, i) => _buildProductCard(
-                        context: context,
-                        product: products[i],
-                        productProvider: productProvider,
-                        cartProvider: cartProvider,
+            child: Stack(
+              children: [
+                // Fond de la carte blanche
+                Container(
+                  margin: const EdgeInsets.only(top: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(
+                          0,
+                          -3,
+                        ), // ombre légèrement vers le haut
                       ),
-                );
-              },
+                    ],
+                  ),
+                ),
+
+                // Contenu : GridView des produits
+                Padding(
+                  padding: const EdgeInsets.only(
+                    top: 30,
+                  ), // espace pour arrondi
+                  child: StreamBuilder<List<Product>>(
+                    stream: productProvider.combinedProductsStream,
+                    builder: (ctx, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Center(child: Text("Erreur: ${snapshot.error}"));
+                      }
+
+                      final products = snapshot.data ?? [];
+
+                      if (products.isEmpty) {
+                        return const Center(
+                          child: Text("Aucun produit disponible"),
+                        );
+                      }
+
+                      return GridView.builder(
+                        padding: const EdgeInsets.all(10),
+                        itemCount: products.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 3 / 4,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                            ),
+                        itemBuilder:
+                            (ctx, i) => _buildProductCard(
+                              context: context,
+                              product: products[i],
+                              productProvider: productProvider,
+                              cartProvider: cartProvider,
+                            ),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -83,6 +131,45 @@ class HomeScreen extends StatelessWidget {
           );
         },
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(
+    BuildContext context,
+    ProductProvider productProvider,
+  ) {
+    return Container(
+      height: 50,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+      ),
+      child: Row(
+        children: [
+          // Icône de recherche à gauche comme le code pays
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: const Icon(Icons.search, color: Colors.grey, size: 22),
+          ),
+          // Champ de texte
+          Expanded(
+            child: TextField(
+              onChanged: (value) {
+                ;
+              },
+              style: const TextStyle(fontSize: 16),
+              decoration: const InputDecoration(
+                hintText: "Rechercher un produit...",
+                hintStyle: TextStyle(color: Colors.grey),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -182,12 +269,25 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        'Prix : ${Utils.formatPrice(product.price)}',
-                        style: const TextStyle(
-                          fontSize: 14, // Réduit
-                          color: Colors.green,
-                          fontWeight: FontWeight.w600,
+
+                      Container(
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          Utils.formatPrice(product.price),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green,
+                          ),
                         ),
                       ),
                     ],

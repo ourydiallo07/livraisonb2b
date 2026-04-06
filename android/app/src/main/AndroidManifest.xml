@@ -13,7 +13,7 @@
     <application
         android:name="${applicationName}"
         android:label="livraisonb2b"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/launcher_icon"
         android:usesCleartextTraffic="true"
         android:enableOnBackInvokedCallback="true"
         android:requestLegacyExternalStorage="true">

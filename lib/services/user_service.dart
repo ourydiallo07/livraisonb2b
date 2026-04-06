@@ -198,4 +198,125 @@ class UserService {
     );
     await createUserApp(adminUser);
   }
+
+  static Future<void> promoteToAgent(String userId) async {
+    await db.collection(USERS_REF).doc(userId).update({
+      'isAgent': true,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Rétrograder un agent
+  static Future<void> demoteFromAgent(String userId) async {
+    await db.collection(USERS_REF).doc(userId).update({
+      'isAgent': false,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Récupérer tous les agents
+  static Stream<QuerySnapshot> getAgentsStream() {
+    return db
+        .collection(USERS_REF)
+        .where('isAgent', isEqualTo: true)
+        .snapshots();
+  }
+
+  // Récupérer la liste des agents avec conversion en UserApp
+  static Stream<List<UserApp>> getAgentsListStream() {
+    return db
+        .collection(USERS_REF)
+        .where('isAgent', isEqualTo: true)
+        .withConverter(
+          fromFirestore: UserApp.fromFirestore,
+          toFirestore: (UserApp userApp, _) => userApp.toFirestore(),
+        )
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  // Récupérer les agents de manière asynchrone
+  static Future<List<UserApp>> getAgents() async {
+    final snapshot =
+        await db
+            .collection(USERS_REF)
+            .where('isAgent', isEqualTo: true)
+            .withConverter(
+              fromFirestore: UserApp.fromFirestore,
+              toFirestore: (UserApp userApp, _) => userApp.toFirestore(),
+            )
+            .get();
+
+    return snapshot.docs.map((doc) => doc.data()).toList();
+  }
+
+  // Mettre à jour le statut d'agent
+  static Future<void> updateUserAgentStatus(String userId, bool isAgent) async {
+    await db.collection(USERS_REF).doc(userId).update({
+      'isAgent': isAgent,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Vérifier si un utilisateur est agent
+  static Future<bool> isUserAgent(String userId) async {
+    final user = await getUserFromDB(userId);
+    return user?.isAgent ?? false;
+  }
+
+  // Récupérer tous les utilisateurs (pour la sélection des clients par les agents)
+  static Stream<List<UserApp>> getAllUsersStream() {
+    return db
+        .collection(USERS_REF)
+        .where('isAdmin', isEqualTo: false) // Exclure les admins
+        .withConverter(
+          fromFirestore: UserApp.fromFirestore,
+          toFirestore: (UserApp userApp, _) => userApp.toFirestore(),
+        )
+        .snapshots()
+        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+  }
+
+  // Rechercher des utilisateurs par nom, prénom ou téléphone
+  static Future<List<UserApp>> searchUsers(String query) async {
+    final snapshot =
+        await db
+            .collection(USERS_REF)
+            .where('isAdmin', isEqualTo: false)
+            .withConverter(
+              fromFirestore: UserApp.fromFirestore,
+              toFirestore: (UserApp userApp, _) => userApp.toFirestore(),
+            )
+            .get();
+
+    final allUsers = snapshot.docs.map((doc) => doc.data()).toList();
+
+    // Filtrage local par recherche
+    return allUsers.where((user) {
+      final searchLower = query.toLowerCase();
+      return user.firstName?.toLowerCase().contains(searchLower) == true ||
+          user.lastName?.toLowerCase().contains(searchLower) == true ||
+          user.phone?.toLowerCase().contains(searchLower) == true;
+    }).toList();
+  }
+
+  // Dans UserService
+  static Future<List<UserApp>> getAllNonAdminUsers() async {
+    try {
+      final snapshot =
+          await db
+              .collection(USERS_REF)
+              .where('isAdmin', isEqualTo: false)
+              .withConverter(
+                fromFirestore: UserApp.fromFirestore,
+                toFirestore: (UserApp userApp, _) => userApp.toFirestore(),
+              )
+              .get();
+
+      return snapshot.docs.map((doc) => doc.data()).toList();
+    } catch (e) {
+      debugPrint('Erreur récupération utilisateurs: $e');
+      return [];
+    }
+  }
 }

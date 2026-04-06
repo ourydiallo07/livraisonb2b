@@ -180,28 +180,26 @@ class _LocationPickerState extends State<LocationPicker> {
                 return;
               }
 
+              // Créer le GeoPoint
+              GeoPoint? geoPoint;
+              if (_selectedLocation != null) {
+                geoPoint = GeoPoint(
+                  _selectedLocation!.latitude,
+                  _selectedLocation!.longitude,
+                );
+              }
+
+              // Appeler le callback
               widget.onLocationSelected({
                 'address': _addressController.text,
-                'location':
-                    _selectedLocation != null
-                        ? {
-                          'lat': _selectedLocation!.latitude,
-                          'lng': _selectedLocation!.longitude,
-                        }
-                        : null,
+                'location': geoPoint, // GeoPoint directement
                 'notes': _notesController.text,
               });
 
-              // Il faut transmettre ces données à Navigator.pop pour que 'locationData' soit renseigné
+              // Fermer avec les données
               Navigator.of(context).pop({
                 'address': _addressController.text,
-                'location':
-                    _selectedLocation != null
-                        ? {
-                          'lat': _selectedLocation!.latitude,
-                          'lng': _selectedLocation!.longitude,
-                        }
-                        : null,
+                'location': geoPoint,
                 'notes': _notesController.text,
               });
             },

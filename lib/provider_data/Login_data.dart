@@ -101,6 +101,14 @@ class LoginData extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateUserAddress({required String address, GeoPoint? location}) {
+    currentUserApp = currentUserApp.copyWith(
+      address: address,
+      location: location,
+    );
+    notifyListeners();
+  }
+
   void resetAuthState() {
     verificationId = "";
     resendToken = null;

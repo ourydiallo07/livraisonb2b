@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:livraisonb2b/constants/order_status.dart';
 import 'package:livraisonb2b/models/order.dart';
+import 'package:livraisonb2b/services/distance_calculator.dart';
 
 class OrderProvider with ChangeNotifier {
   final firestore.FirebaseFirestore _firestore =
@@ -53,6 +55,8 @@ class OrderProvider with ChangeNotifier {
     required double total,
     String? deliveryAddress,
     firestore.GeoPoint? deliveryLocation,
+    String? orderedByAgentId,
+    String? orderedByAgentName,
     String? deliveryNotes, // Ajouté
   }) async {
     try {
@@ -69,6 +73,8 @@ class OrderProvider with ChangeNotifier {
         'deliveryNotes': deliveryNotes, // Ajouté
         'createdAt': firestore.FieldValue.serverTimestamp(),
         'viewedByAdmin': false,
+        'orderedByAgentId': orderedByAgentId,
+        'orderedByAgentName': orderedByAgentName,
       });
 
       await _notifyAdmins(docRef.id);
@@ -244,5 +250,54 @@ class OrderProvider with ChangeNotifier {
       debugPrint('Error getting recent orders: $e');
       return [];
     }
+  }
+
+  Stream<List<Order>> getOrdersForDeliveryManWithDistance(
+    String deliveryManId,
+    Position? driverPosition,
+  ) {
+    return _firestore
+        .collection('orders')
+        .where('isVisibleToDelivery', isEqualTo: true)
+        .where('status', whereIn: [OrderStatus.shipped, OrderStatus.delivered])
+        .orderBy('shippedAt', descending: true)
+        .snapshots()
+        .asyncMap((snapshot) async {
+          final orders = snapshot.docs.map(Order.fromFirestore).toList();
+
+          // Si on a la position du livreur, trier par distance
+          if (driverPosition != null) {
+            return _sortOrdersByDistance(orders, driverPosition);
+          }
+
+          return orders;
+        });
+  }
+
+  // Méthode privée pour trier par distance (uniquement pour le livreur)
+  List<Order> _sortOrdersByDistance(
+    List<Order> orders,
+    Position driverPosition,
+  ) {
+    // Calculer les distances pour chaque commande
+    final ordersWithDistance =
+        orders.map((order) {
+          final distance = DistanceCalculator.calculateOrderDistance(
+            order,
+            driverPosition,
+          );
+
+          // Créer une copie temporaire avec la distance calculée
+          return order.copyWith(distanceInMeters: distance);
+        }).toList();
+
+    // Trier par distance (les plus proches d'abord)
+    ordersWithDistance.sort((a, b) {
+      final distanceA = a.distanceInMeters ?? double.infinity;
+      final distanceB = b.distanceInMeters ?? double.infinity;
+      return distanceA.compareTo(distanceB);
+    });
+
+    return ordersWithDistance;
   }
 }

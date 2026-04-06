@@ -202,7 +202,7 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  // Dans cart_provider.dart
+  // Dans cart_provider.dart - méthode validateCart
   Future<String> validateCart({
     required String userId,
     required OrderProvider orderProvider,
@@ -211,12 +211,21 @@ class CartProvider with ChangeNotifier {
     String? deliveryAddress,
     GeoPoint? deliveryLocation,
     String? deliveryNotes,
+    UserApp? recipientUser,
   }) async {
     // Validation des entrées
     if (userId.isEmpty) {
       throw AppError(
         AppErrorType.invalidInput,
         message: 'Utilisateur non identifié',
+      );
+    }
+
+    // VÉRIFICATION IMPORTANTE : L'ID utilisateur doit exister
+    if (currentUser.id == null || currentUser.id!.isEmpty) {
+      throw AppError(
+        AppErrorType.invalidInput,
+        message: 'Utilisateur non connecté correctement',
       );
     }
 
@@ -228,10 +237,25 @@ class CartProvider with ChangeNotifier {
       );
     }
 
-    if (deliveryAddress == null || deliveryAddress.isEmpty) {
+    final targetUser = recipientUser ?? currentUser;
+
+    // Utiliser l'adresse fournie ou l'adresse existante
+    final targetAddress = deliveryAddress ?? targetUser.address;
+    final targetLocation = deliveryLocation ?? targetUser.location;
+
+    // Validation de l'adresse
+    if (targetAddress == null || targetAddress.isEmpty) {
       throw AppError(
         AppErrorType.invalidInput,
-        message: 'Veuillez spécifier une adresse de livraison',
+        message:
+            'Aucune adresse disponible. Veuillez sélectionner une adresse de livraison.',
+      );
+    }
+
+    if (targetLocation == null) {
+      throw AppError(
+        AppErrorType.invalidInput,
+        message: 'Localisation du client non disponible.',
       );
     }
 
@@ -253,40 +277,78 @@ class CartProvider with ChangeNotifier {
     // Création de la commande
     try {
       final orderId = await orderProvider.createOrder(
-        userId: userId,
+        userId: targetUser.id!,
         items: orderItems,
-        userfirstName: currentUser.firstName ?? '',
-        userlastName: currentUser.lastName ?? '',
-        userphone: currentUser.phone ?? '',
-
+        userfirstName: targetUser.firstName ?? '',
+        userlastName: targetUser.lastName ?? '',
+        userphone: targetUser.phone ?? '',
         total: getTotalAmount(userId),
-        deliveryAddress: deliveryAddress,
-        deliveryLocation: deliveryLocation,
+        deliveryAddress: targetAddress,
+        deliveryLocation: targetLocation,
         deliveryNotes: deliveryNotes,
+        orderedByAgentId: recipientUser != null ? currentUser.id : null,
+        orderedByAgentName:
+            recipientUser != null
+                ? '${currentUser.firstName} ${currentUser.lastName}'
+                : null,
       );
 
-      if (deliveryAddress != null && deliveryLocation != null) {
-        await UserService.updateUserLocation(
-          userId: userId,
-          address: deliveryAddress,
-          location: deliveryLocation,
-        );
+      // Vider le panier après succès
+      clearCart(userId);
 
-        final loginData = Provider.of<LoginData>(context, listen: false);
-        loginData.updateUserApp(
-          currentUser.copyWith(
+      // IMPORTANT: Mettre à jour l'adresse de l'utilisateur
+      // (uniquement pour ses propres commandes, pas pour les commandes d'agent)
+      if (recipientUser == null &&
+          deliveryAddress != null &&
+          deliveryAddress.isNotEmpty &&
+          currentUser.id != null) {
+        // Vérification supplémentaire
+
+        // Vérifier si l'adresse est différente avant de mettre à jour
+        if (deliveryAddress != currentUser.address) {
+          await _updateUserAddress(
+            userId: currentUser.id!,
             address: deliveryAddress,
             location: deliveryLocation,
-          ),
-        );
+            context: context,
+          );
+        }
       }
 
-      // Vider le panier seulement après succès
-      clearCart(userId);
+      debugPrint(
+        '✅ Commande créée pour: ${targetUser.firstName} ${targetUser.lastName}',
+      );
+      debugPrint('📍 Adresse utilisée: $targetAddress');
+
       return orderId;
     } catch (e) {
       debugPrint('Erreur création commande: $e');
       rethrow;
+    }
+  }
+
+  Future<void> _updateUserAddress({
+    required String userId,
+    required String address,
+    GeoPoint? location,
+    required BuildContext context,
+  }) async {
+    try {
+      // Utiliser set() avec merge au lieu de update()
+      await _firestore.collection('users').doc(userId).set({
+        'address': address,
+        'location': location,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true)); // ← merge: true crée OU met à jour
+
+      // Mettre à jour localement
+      final loginData = Provider.of<LoginData>(context, listen: false);
+      loginData.updateUserAddress(address: address, location: location);
+
+      debugPrint('✅ Adresse utilisateur $userId créée/mise à jour');
+    } catch (e) {
+      debugPrint('❌ Erreur mise à jour adresse: $e');
+      // Ne pas rethrow pour ne pas bloquer la commande
     }
   }
 }
