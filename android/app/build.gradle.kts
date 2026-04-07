@@ -9,6 +9,10 @@ android {
     namespace = "com.example.livraisonb2b"
     compileSdk = flutter.compileSdkVersion.toInt()
     ndkVersion = "27.2.12479018"
+    
+    buildFeatures {
+        buildConfig = true
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -25,8 +29,7 @@ android {
         targetSdk = flutter.targetSdkVersion.toInt()
         versionCode = flutter.versionCode.toInt()
         versionName = flutter.versionName
-        buildConfigField "String", "GOOGLE_MAPS_API_KEY", "\"${project.properties['GOOGLE_MAPS_API_KEY']}\""
-
+        buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"${project.properties["GOOGLE_MAPS_API_KEY"]}\"")
     }
 
     buildTypes {
@@ -43,5 +46,4 @@ flutter {
 dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.14.0"))
     implementation("com.google.firebase:firebase-analytics-ktx")
-    // Ajoutez d'autres dépendances Firebase si nécessaire
 }
